@@ -4,7 +4,7 @@
 
 ### Author: Jay / Fienna Liang · 2025
 
-#### Reference Implementation: [CyberLoop Framework](https://github.com/roackb2/cyber-loop)
+#### Reference Implementation: [CyberLoop Framework](https://github.com/roackb2/cyberloop)
 
 ---
 
