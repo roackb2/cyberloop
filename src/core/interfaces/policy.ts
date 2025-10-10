@@ -17,3 +17,29 @@ export interface Policy<S = State, A = Action, F = Feedback> {
   /** Optional adaptation hook with latest feedback. */
   adapt?(feedback: F, ladder: Ladder<F>): void
 }
+
+/**
+ * ProbePolicy - Fast, reflexive control policy for inner loop
+ * 
+ * Part of the inner control loop. Makes deterministic decisions based on
+ * probe signals (gradient information) without expensive LLM calls.
+ * 
+ * Inspired by AICL whitepaper: "Probe performs low-cost checks to confirm direction"
+ * 
+ * @template S - State type
+ * @template A - Action type
+ * @template F - Feedback type (typically number for gradient)
+ */
+export interface ProbePolicy<S = State, A = Action, F = Feedback> extends Policy<S, A, F> {
+  /**
+   * Initialize policy with the initial state from planner
+   * Called once at the start of exploration
+   */
+  initialize(state: S): void
+
+  /**
+   * Check if current state is stable/good enough to stop exploration
+   * Returns true when state is in acceptable range
+   */
+  isStable(state: S): boolean
+}

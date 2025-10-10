@@ -1,130 +1,92 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import {
-  SimpleBudgetTracker,
-} from '@/core/defaults'
+import { createControlBudget } from '@/core/budget/control-budget'
+import { ProportionalLadder } from '@/core/defaults'
 import type {
   Environment,
   Evaluator,
-  Ladder,
-  Policy,
+  Planner,
   Probe,
-  StrategySelector,
+  ProbePolicy,
 } from '@/core/interfaces'
 import {
   Orchestrator,
 } from '@/core/orchestrator'
 
 describe('Orchestrator', () => {
-  it('records feedback and respects the control kernel integration', async () => {
-    const observe = vi.fn(async () => 0)
+  it('runs inner/outer loop with probe policy and planner', async () => {
+    // Environment
     const apply = vi.fn(async (action: number) => action + 1)
-    const env: Environment<number, number> = { observe, apply }
+    const observe = vi.fn(async () => 0) // Not used in new architecture but required by interface
+    const env: Environment<number, number> = { apply, observe }
 
+    // ProbePolicy
+    let callCount = 0
     const decide = vi.fn(async () => 2)
-    const adapt = vi.fn()
-    const policy: Policy<number, number, number> = {
-      id: 'policy',
-      capabilities: () => ({ cost: { step: 2 }, explorationRange: [0, 3] }),
-      decide,
-      adapt,
-    }
-
-    const evaluate = vi.fn(() => 0.75)
-    const evaluator: Evaluator<number, number> = { evaluate }
-
-    let ladderLevel = 0
-    const update: Ladder<number>['update'] = vi.fn((feedback: number) => {
-      ladderLevel = feedback
+    const isStable = vi.fn(() => {
+      callCount++
+      return callCount > 1 // Stable after second call
     })
-    const ladder: Ladder<number> = {
-      level: () => ladderLevel,
-      update,
+    const initialize = vi.fn()
+    const probePolicy: ProbePolicy<number, number, number> = {
+      id: 'test-policy',
+      capabilities: () => ({ cost: { step: 0.1 }, explorationRange: [0, 3], handles: [] }),
+      decide,
+      isStable,
+      initialize,
     }
 
+    // Planner
+    const plan = vi.fn(async () => 0) // Initial state
+    const evaluatePlan = vi.fn(async () => 'Success!')
+    const replan = vi.fn(async () => null)
+    const planner: Planner<number> = { plan, evaluate: evaluatePlan, replan }
+
+    // Evaluator
+    const evaluateFn = vi.fn(() => 0.75)
+    const evaluator: Evaluator<number, number> = { evaluate: evaluateFn }
+
+    // Ladder
+    const ladder = new ProportionalLadder({ gainUp: 0.2, gainDown: 0.2, max: 3 })
+
+    // Probes
     const probeTest = vi.fn(async () => ({ pass: true }))
     const probe: Probe<number> = {
-      id: 'probe',
+      id: 'test-probe',
       capabilities: () => ({ cost: 0 }),
       test: probeTest,
     }
 
-    const select = vi.fn(() => ({ probe, policy }))
-    const selector: StrategySelector<number, number> = { select }
-
-    const budget = new SimpleBudgetTracker(10)
-
-    const onProbeStart = vi.fn()
-    const onProbeResult = vi.fn()
-    const onAction = vi.fn()
-    const onStep = vi.fn()
-    const onBudget = vi.fn()
+    // Budget
+    const budget = createControlBudget(20, 6)
 
     const orchestrator = new Orchestrator<number, number, number>({
       env,
+      probePolicy,
+      planner,
+      probes: [probe],
       evaluator,
       ladder,
       budget,
-      selector,
-      probes: [probe],
-      policies: [policy],
-      maxSteps: 1,
-      events: { onProbeStart, onProbeResult, onAction, onStep, onBudget },
+      maxInnerSteps: 5,
     })
 
-    const { logs, final } = await orchestrator.run()
+    const result = await orchestrator.run('test input')
 
-    expect(select).toHaveBeenCalledTimes(1)
-    expect(onProbeStart).toHaveBeenCalledWith({
-      t: 0,
-      state: 0,
-      probe,
-      attempt: 1,
-    })
-    expect(probeTest).toHaveBeenCalledWith(0)
-    expect(onProbeResult).toHaveBeenCalledWith({
-      t: 0,
-      state: 0,
-      probe,
-      attempt: 1,
-      result: { pass: true },
-    })
-    expect(observe).toHaveBeenCalledTimes(1)
+    // Verify outer loop calls
+    expect(plan).toHaveBeenCalledWith('test input')
+    expect(initialize).toHaveBeenCalledWith(0)
+    expect(evaluatePlan).toHaveBeenCalled()
+    
+    // Verify inner loop
+    expect(probeTest).toHaveBeenCalled()
+    expect(decide).toHaveBeenCalled()
     expect(apply).toHaveBeenCalledWith(2)
-    expect(decide).toHaveBeenCalledWith(0, ladder)
-    expect(adapt).toHaveBeenCalledWith(0.75, ladder)
-    expect(update).toHaveBeenCalledWith(0.75)
-    expect(ladder.level()).toBeCloseTo(0.75)
-    expect(budget.remaining()).toBe(8)
-    expect(onBudget).toHaveBeenCalledWith({ t: 0, delta: 2, before: 10, after: 8 })
-
-    expect(logs).toHaveLength(1)
-    const [first] = logs
-    expect(first.feedback).toBe(0.75)
-    expect(first.score).toBe(0.75)
-    expect(first.action).toBe(2)
-    expect(first.next).toBe(3)
-    expect(first.state).toBe(0)
-    expect(first.ladderLevel).toBeCloseTo(0.75)
-    expect(first.budgetRemaining).toBe(8)
-    expect(first.policyId).toBe('policy')
-    expect(first.probeId).toBe('probe')
-    expect(onAction).toHaveBeenCalledWith({
-      t: 0,
-      state: 0,
-      action: 2,
-      next: 3,
-      feedback: 0.75,
-      policy,
-    })
-    expect(onStep).toHaveBeenCalledTimes(1)
-    expect(onStep).toHaveBeenCalledWith({
-      t: 0,
-      state: 0,
-      action: 2,
-      next: 3,
-      feedback: 0.75,
-    })
-    expect(final).toBe(3)
+    expect(isStable).toHaveBeenCalled()
+    
+    // Verify result
+    expect(result.output).toBe('Success!')
+    expect(result.outerLoopCalls).toBe(2) // plan + evaluate
+    expect(result.logs.length).toBeGreaterThan(0)
   })
 })

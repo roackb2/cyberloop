@@ -5,7 +5,11 @@
 export type State = unknown
 export type Action = unknown
 export type Feedback = unknown
-export interface ProbeResult { pass: boolean; reason?: string }
+export interface ProbeResult { 
+  pass: boolean
+  reason?: string
+  data?: unknown
+}
 export type Cost = number | Record<string, number>
 
 /** Failure categories for StrategySelector / FailureClassifier */

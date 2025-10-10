@@ -1,328 +1,272 @@
+import type { ControlBudget } from './budget/control-budget'
 import type {
-  BudgetTracker,
   Environment,
   Evaluator,
-  FailureClassifier,
   Ladder,
-  Policy,
+  Planner,
   Probe,
-  StrategySelector,
-  TerminationPolicy,
+  ProbePolicy,
 } from './interfaces'
-import { controlLoop } from './loop'
-import type { LoopEvents } from './runtime/events'
-import type { Action, Cost, FailureType, Feedback, ProbeResult, State } from './types'
-import { withRetry } from './utils/retry'
+import type { Action, Feedback, ProbeResult, State } from './types'
 
+/**
+ * ExplorationResult - Result of inner loop exploration
+ */
+export interface ExplorationResult<S> {
+  status: 'stable' | 'budget-exhausted'
+  state: S
+  history: S[]
+  probeResults: ProbeResult[]
+}
+
+/**
+ * StepLog - Log entry for each inner loop iteration
+ */
 export interface StepLog<S, A, F> {
   t: number
   state: S
   action?: A
   next?: S
-  score?: number
-  failure?: FailureType
-  ladderLevel: number
-  budgetRemaining: number
-  note?: string
   feedback?: F
-  policyId?: string
-  probeId?: string
-  probeResult?: unknown
-}
-
-interface RetryConfig {
-  observe?: number
-  probe?: number
-  decide?: number
-  apply?: number
-  evaluate?: number
-}
-
-type TerminationDecision = ReturnType<TerminationPolicy['shouldStop']>
-
-export interface OrchestratorOpts<S, A, F> {
-  env: Environment<S, A>
-  evaluator: Evaluator<S, F>
-  ladder: Ladder<F>
-  budget: BudgetTracker
-  selector: StrategySelector<S, A>
-  probes: Probe<S>[]
-  policies: Policy<S, A, F>[]
-  maxSteps?: number
-  costOf?: (a: A) => Cost
-  events?: LoopEvents<S, A, F>
-  termination?: TerminationPolicy
-  retry?: RetryConfig
-  failureClassifier?: FailureClassifier<S, A>
+  ladderLevel: number
+  innerBudgetRemaining: number
+  probeResult?: ProbeResult
+  isStable: boolean
 }
 
 /**
- * Main control orchestrator that coordinates Environment, Policy,
- * Evaluator, Ladder, Probes, and Budget within one loop.
+ * OrchestratorResult - Final result from orchestrator
+ */
+export interface OrchestratorResult<S, A, F> {
+  output: string
+  explorationAttempts: number
+  innerLoopSteps: number
+  outerLoopCalls: number
+  logs: StepLog<S, A, F>[]
+}
+
+/**
+ * OrchestratorOpts - Configuration for orchestrator
+ */
+export interface OrchestratorOpts<S, A, F> {
+  env: Environment<S, A>
+  probePolicy: ProbePolicy<S, A, F>
+  planner: Planner<S>
+  probes: Probe<S>[]
+  evaluator: Evaluator<S, F>
+  ladder: Ladder<F>
+  budget: ControlBudget
+  maxInnerSteps?: number
+}
+
+/**
+ * Orchestrator - Hierarchical control loop with inner/outer loops
+ * 
+ * Architecture:
+ * - Inner loop: Fast, reflexive control using ProbePolicy
+ * - Outer loop: Slow, strategic control using Planner
+ * 
+ * Flow:
+ * 1. Planner creates initial plan from user input (outer loop call #1)
+ * 2. Inner loop explores deterministically until stable or budget exhausted
+ * 3. If stable: Planner evaluates results (outer loop call #2)
+ * 4. If budget exhausted: Planner replans (outer loop call #3), goto step 2
+ * 5. Return final output
  */
 export class Orchestrator<S = State, A = Action, F = Feedback> {
   private readonly env: Environment<S, A>
+  private readonly probePolicy: ProbePolicy<S, A, F>
+  private readonly planner: Planner<S>
+  private readonly probes: Probe<S>[]
   private readonly evaluator: Evaluator<S, F>
   private readonly ladder: Ladder<F>
-  private readonly budget: BudgetTracker
-  private readonly selector: StrategySelector<S, A>
-  private readonly probes: Probe<S>[]
-  private readonly policies: Policy<S, A, F>[]
-  private readonly maxSteps: number
-  private readonly failureClassifier?: FailureClassifier<S, A>
-  private readonly costOf?: OrchestratorOpts<S, A, F>['costOf']
-  private readonly events?: LoopEvents<S, A, F>
-  private readonly termination?: TerminationPolicy
-  private readonly retry: RetryConfig
+  private readonly budget: ControlBudget
+  private readonly maxInnerSteps: number
 
   public logs: StepLog<S, A, F>[] = []
-  private noImprovementSteps = 0
-  private bestNumericFeedback?: number
-  private lastNumericFeedback?: number
 
   constructor(opts: OrchestratorOpts<S, A, F>) {
     this.env = opts.env
+    this.probePolicy = opts.probePolicy
+    this.planner = opts.planner
+    this.probes = opts.probes
     this.evaluator = opts.evaluator
     this.ladder = opts.ladder
     this.budget = opts.budget
-    this.selector = opts.selector
-    this.probes = opts.probes
-    this.policies = opts.policies
-    this.maxSteps = opts.maxSteps ?? 50
-    this.failureClassifier = opts.failureClassifier
-    this.costOf = opts.costOf
-    this.events = opts.events
-    this.termination = opts.termination
-    this.retry = opts.retry ?? {}
+    this.maxInnerSteps = opts.maxInnerSteps ?? 50
   }
 
-  private recordCost(t: number, delta: Cost | undefined): void {
-    if (delta === undefined) return
-    const isZero = typeof delta === 'number'
-      ? delta === 0
-      : Object.values(delta).every(v => v === 0)
-    if (isZero) return
-    const before = this.budget.remaining()
-    this.budget.record(delta)
-    const after = this.budget.remaining()
-    this.events?.onBudget?.({ t, delta, before, after })
-  }
-
-  async run(): Promise<{ final?: S; logs: StepLog<S, A, F>[] }> {
+  /**
+   * Run the orchestrator with user input
+   * 
+   * @param userInput - User's natural language input
+   * @returns Final output and statistics
+   */
+  async run(userInput: string): Promise<OrchestratorResult<S, A, F>> {
     this.logs = []
-    this.noImprovementSteps = 0
-    this.bestNumericFeedback = undefined
-    this.lastNumericFeedback = undefined
+    let explorationAttempts = 0
+    let innerLoopSteps = 0
+    let outerLoopCalls = 0
 
-    let stopReason: string | undefined
-    let stopT = -1
+    // Outer loop call #1: Initial planning
+    console.log('\n[Outer Loop] Calling planner.plan()...')
+    let state = await this.planner.plan(userInput)
+    console.log(`[Outer Loop] Initial state: ${JSON.stringify(state)}`)
+    outerLoopCalls++
+    this.budget.outerLoop.record(2.0) // Cost of LLM call
 
-    for (let t = 0; t < this.maxSteps; t++) {
-      const res = await this.step(t)
-      this.logs.push(res)
-      this.updateProgress(res)
+    // Initialize probe policy with initial state
+    this.probePolicy.initialize(state)
+    console.log('[Outer Loop] ProbePolicy initialized\n')
 
-      if (this.budget.shouldStop()) {
-        stopReason = 'budget-exhausted'
-        stopT = res.t
-        break
-      }
+    // Main control loop
+    while (!this.budget.shouldStop()) {
+      explorationAttempts++
 
-      const termination = this.termination
-      if (termination) {
-        const decision: TerminationDecision = termination.shouldStop({
-          t: res.t,
-          budgetRemaining: this.budget.remaining(),
-          noImprovementSteps: this.noImprovementSteps,
-          lastFeedback: this.lastNumericFeedback,
-        })
-        if (decision.stop) {
-          stopReason = decision.reason ?? 'termination'
-          stopT = res.t
-          break
+      // Inner loop: Deterministic exploration
+      const result = await this.exploreInnerLoop(state)
+      innerLoopSteps += result.history.length
+
+      if (result.status === 'stable') {
+        // Success! Outer loop call #2: Evaluate results
+        console.log('\n[Outer Loop] Stable state found! Calling planner.evaluate()...')
+        const output = await this.planner.evaluate(result.state, result.history)
+        outerLoopCalls++
+        this.budget.outerLoop.record(2.0)
+
+        return {
+          output,
+          explorationAttempts,
+          innerLoopSteps,
+          outerLoopCalls,
+          logs: this.logs,
         }
       }
-    }
 
-    if (!stopReason && this.logs.length === this.maxSteps) {
-      stopReason = 'max-steps'
-      stopT = this.logs[this.logs.length - 1]?.t ?? this.maxSteps - 1
-    }
+      if (result.status === 'budget-exhausted' && !this.budget.outerLoop.shouldStop()) {
+        // Inner loop exhausted, try replanning
+        // Outer loop call #3: Replan
+        console.log('\n[Outer Loop] Inner loop exhausted. Calling planner.replan()...')
+        const newState = await this.planner.replan(result.state, result.history)
+        outerLoopCalls++
+        this.budget.outerLoop.record(2.0)
 
-    if (stopReason) {
-      this.events?.onStop?.({ t: stopT, reason: stopReason })
-    }
-
-    const last = this.logs[this.logs.length - 1]
-    return { final: last?.next ?? last?.state, logs: this.logs }
-  }
-
-  private updateProgress(log: StepLog<S, A, F>): void {
-    if (typeof log.score === 'number') {
-      this.lastNumericFeedback = log.score
-      if (
-        this.bestNumericFeedback === undefined ||
-        log.score > this.bestNumericFeedback
-      ) {
-        this.bestNumericFeedback = log.score
-        this.noImprovementSteps = 0
-      } else {
-        this.noImprovementSteps += 1
+        if (newState) {
+          state = newState
+          this.probePolicy.initialize(newState)
+          // Reset inner loop budget for new attempt
+          this.budget.innerLoop.reset?.()
+          continue
+        }
       }
-    } else if (this.lastNumericFeedback !== undefined) {
-      this.noImprovementSteps += 1
+
+      // Can't replan or outer budget exhausted
+      break
     }
 
-    if (log.failure) {
-      this.noImprovementSteps += 1
+    // Fallback: Return best effort result
+    return {
+      output: 'Exploration exhausted without finding stable solution',
+      explorationAttempts,
+      innerLoopSteps,
+      outerLoopCalls,
+      logs: this.logs,
     }
   }
 
-  private classifyFailure(state: S, reason?: string): FailureType {
-    if (this.failureClassifier) {
-      return this.failureClassifier.classify({
-        prev: state,
-        probeReason: reason,
-        metrics: { feedback: this.lastNumericFeedback },
-      })
-    }
-    if (!reason) return 'Unknown'
-    const normalized = reason.toLowerCase()
-    if (normalized.includes('no-hits') || normalized.includes('no hits') || normalized.includes('empty')) {
-      return 'NoData'
-    }
-    if (normalized.includes('too-many') || normalized.includes('overflow')) {
-      return 'TooBroad'
-    }
-    if (normalized.includes('too-few') || normalized.includes('narrow')) {
-      return 'TooNarrow'
-    }
-    if (normalized.includes('rate')) return 'RateLimited'
-    if (normalized.includes('auth')) return 'AuthDenied'
-    if (normalized.includes('tool')) return 'ToolMissing'
-    if (normalized.includes('infeasible')) return 'Infeasible'
-    return 'Unknown'
-  }
+  /**
+   * Inner loop: Fast, deterministic exploration
+   * 
+   * Uses ProbePolicy to make quick adjustments based on probe signals
+   * until state is stable or inner loop budget exhausted.
+   */
+  private async exploreInnerLoop(initialState: S): Promise<ExplorationResult<S>> {
+    let state = initialState
+    const history: S[] = [state]
+    const probeResults: ProbeResult[] = []
 
-  private async step(t: number): Promise<StepLog<S, A, F>> {
-    let state = await withRetry(
-      () => this.env.observe(),
-      this.retry.observe ?? 0,
-    )
-    const ladderLevel = this.ladder.level()
-    const initialBudget = this.budget.remaining()
+    for (let t = 0; t < this.maxInnerSteps && !this.budget.innerLoop.shouldStop(); t++) {
+      // Run probes to get gradient signals
+      const probeResult = await this.runProbes(state)
+      probeResults.push(probeResult)
+      this.budget.innerLoop.record(0.05) // Cheap probe cost
 
-    // 1. Select probe & policy (initially assume unknown failure)
-    let { probe, policy } = this.selector.select({
-      failure: 'Unknown',
-      ladderLevel,
-      budgetRemaining: initialBudget,
-      probes: this.probes,
-      policies: this.policies,
-    })
-
-    // 2. Run cheap deterministic probe to test feasibility (AICL spec: step 2)
-    // Probe result is a gradient signal, not a hard blocker
-    this.events?.onProbeStart?.({ t, state, probe, attempt: 1 })
-    const probeResult = await withRetry(
-      () => probe.test(state),
-      this.retry.probe ?? 0,
-    )
-    this.events?.onProbeResult?.({ t, state, probe, attempt: 1, result: probeResult })
-    const probeCost = probe.capabilities?.()?.cost ?? 0
-    this.recordCost(t, probeCost)
-    // @ts-expect-error - TS doesn't understand that S is already resolved from awaited observe()
-    state = this.updateProbeHistory(state, probeResult, probe)
-
-    // If probe fails, classify failure and potentially switch strategy
-    // But ALWAYS continue to policy execution (probe is a signal, not a blocker)
-    if (!probeResult.pass) {
-      const failure = this.classifyFailure(state, probeResult.reason)
-      const previousProbe = probe
-      const previousPolicy = policy
+      // Check if state is stable (good enough)
+      const isStable = this.probePolicy.isStable(state)
       
-      // Reselect strategy based on failure type
-      const selected = this.selector.select({
-        failure,
-        ladderLevel,
-        budgetRemaining: this.budget.remaining(),
-        probes: this.probes,
-        policies: this.policies,
-      })
-      probe = selected.probe
-      policy = selected.policy
-      
-      if (
-        (previousProbe.id !== probe.id) ||
-        (previousPolicy.id !== policy.id)
-      ) {
-        this.events?.onStrategySwitch?.({
-          t,
-          from: `${previousProbe.id}:${previousPolicy.id}`,
-          to: `${probe.id}:${policy.id}`,
-          reason: failure,
-        })
-      }
-    }
-
-    // 3. Run pure control kernel (observe/decide/act/evaluate/adapt)
-    const { action, next, feedback } = await controlLoop<S, A, F>(
-      this.env,
-      this.evaluator,
-      policy,
-      this.ladder,
-      {
+      // Log this step
+      this.logs.push({
+        t,
         state,
-        retry: {
-          decide: this.retry.decide,
-          apply: this.retry.apply,
-          evaluate: this.retry.evaluate,
-        },
-      },
-    )
-    const aCost = this.costOf?.(action) ?? (policy.capabilities?.()?.cost?.step ?? 1)
-    this.recordCost(t, aCost)
-    this.events?.onAction?.({ t, state, action, next, feedback, policy })
+        ladderLevel: this.ladder.level(),
+        innerBudgetRemaining: this.budget.innerLoop.remaining(),
+        probeResult,
+        isStable,
+      })
 
-    const log: StepLog<S, A, F> = {
-      t,
-      state,
-      action,
-      next,
-      score: typeof feedback === 'number' ? feedback : undefined,
-      ladderLevel: this.ladder.level(),
-      budgetRemaining: this.budget.remaining(),
-      feedback,
-      policyId: policy.id,
-      probeId: probe.id,
-      probeResult,
+      // Debug logging
+      console.log(`[Inner Loop t=${t}] state=${JSON.stringify(state)}, stable=${isStable}, budget=${this.budget.innerLoop.remaining().toFixed(2)}`)
+
+      if (isStable) {
+        return {
+          status: 'stable',
+          state,
+          history,
+          probeResults,
+        }
+      }
+
+      // Probe policy decides next action (deterministic, no LLM!)
+      const action = await this.probePolicy.decide(state, this.ladder)
+      console.log(`[Inner Loop t=${t}] Action: ${JSON.stringify(action)}`)
+      this.budget.innerLoop.record(0.1) // Cheap decision cost
+
+      // Apply action to environment
+      const nextState = await this.env.apply(action)
+      
+      // Evaluate and update ladder
+      const feedback = await this.evaluator.evaluate(state, nextState)
+      this.ladder.update(feedback)
+
+      // Update policy (optional adaptation)
+      this.probePolicy.adapt?.(feedback, this.ladder)
+
+      // Update log with action and feedback
+      const lastLog = this.logs[this.logs.length - 1]
+      if (lastLog) {
+        lastLog.action = action
+        lastLog.next = nextState
+        lastLog.feedback = feedback
+      }
+
+      state = nextState
+      history.push(state)
     }
-    this.events?.onStep?.({
-      t,
+
+    return {
+      status: 'budget-exhausted',
       state,
-      action,
-      next,
-      feedback,
-    })
-    return log
+      history,
+      probeResults,
+    }
   }
 
-  private updateProbeHistory(state: S, probeResult: ProbeResult, probe: Probe<S>): S {
-    // Only mutate if state is an object (not a primitive)
-    if (typeof state !== 'object' || state === null) {
-      return state
+  /**
+   * Run all probes and combine results
+   */
+  private async runProbes(state: S): Promise<ProbeResult> {
+    const results = await Promise.all(
+      this.probes.map(probe => Promise.resolve(probe.test(state)))
+    )
+
+    // Combine probe results (simple strategy: fail if any fails)
+    const allPass = results.every(r => r.pass)
+    const reasons = results.filter(r => !r.pass).map(r => r.reason).filter(Boolean)
+
+    return {
+      pass: allPass,
+      reason: reasons.join(', ') || undefined,
+      data: results,
     }
-    
-    // Mutate state object to add probe history (state is typically an object with probes array)
-    const maybe = state as unknown as { probes?: { id: string; pass: boolean; reason?: string; data?: unknown }[] }
-    const result = probeResult as ProbeResult & { data?: unknown }
-    const entry = {
-      id: probe.id,
-      pass: result.pass,
-      reason: result.reason,
-      data: result.data,
-    }
-    maybe.probes = [...(maybe.probes ?? []), entry].slice(-10)
-    return state
   }
 }

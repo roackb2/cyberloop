@@ -1,21 +1,24 @@
-# Benchmark Results: AICL vs Baseline
+# Benchmark Results: Inner/Outer Loop vs Baseline
 
 **Query**: "node graceful shutdown"  
-**Date**: 2025-10-10  
-**Tool**: Multi-dimensional GitHub search (keywords, language, min_stars, topic, in_name, in_description)
+**Date**: 2025-10-11  
+**Architecture**: Inner/Outer Loop with Deterministic Policy + LLM Planner
 
 ---
 
 ## Results Summary
 
-| Metric | Baseline (No Control Loop) | AICL (CyberLoop) | Winner |
+| Metric | Baseline (No Control Loop) | AICL (Inner/Outer Loop) | Winner |
 |--------|---------------------------|------------------|---------|
-| **Duration** | 20.11s | 55.00s | ⚠️ Baseline (2.7x faster) |
-| **Tool Calls** | 3 | 6 | ⚠️ Baseline (2x fewer) |
-| **Cost** | 6 units | 12.3 units | ⚠️ Baseline (2x cheaper) |
-| **Repositories Found** | 5 high-quality | 8 high-quality | ✓ AICL (more comprehensive) |
+| **Duration** | 14.82s | 37.53s | ⚠️ Baseline (2.5x faster) |
+| **Search API Calls** | 2 | 5 | ⚠️ Baseline (2.5x fewer) |
+| **LLM Calls** | 2 | 2 | ✓ Tie |
+| **Total Cost** | ~4 units | ~4.5 units | ✓ Baseline (slightly cheaper) |
+| **Repositories Found** | 3 high-quality | 10 high-quality | ✓ AICL (3.3x more) |
 | **Output Quality** | Excellent | Excellent | ✓ Tie |
-| **Exploration Pattern** | Strategic | Oscillating | ⚠️ Baseline |
+| **Exploration Pattern** | Direct | Adaptive (narrow→broaden→narrow) | ✓ AICL (systematic) |
+| **Inner Loop Steps** | N/A | 5 | ✓ AICL (bounded exploration) |
+| **Convergence** | Immediate | 4 iterations to stable state | ⚠️ Baseline (faster) |
 
 ---
 
@@ -23,239 +26,135 @@
 
 ### Baseline Agent (No Control Loop)
 
-**Tool Calls:**
-1. `{"keywords":["node","graceful","shutdown"],"language":"javascript","minStars":20,"inDescription":true}`
-2. `{"keywords":["graceful-shutdown"],"language":"javascript","minStars":20,"inName":true}`
-3. `{"keywords":["shutdown"],"language":"javascript","minStars":20,"topic":"graceful-shutdown"}`
+**Search API Calls:**
+1. `{"keywords":["node","graceful","shutdown"],"language":"javascript","minStars":50}` → 7 hits
+2. `{"keywords":["graceful","shutdown"],"orKeywords":["node","express"],"language":"javascript","minStars":50}` → Unknown hits
 
 **Strategy:**
-- Started with broad multi-keyword search with description filter
-- Tried name-only search with hyphenated keyword
-- Explored topic-based search
-- **Efficient and strategic** - each search had a clear purpose
+- Direct LLM-driven search with strategic filters
+- Used minStars=50 to filter quality
+- Added OR keywords for broader coverage
+- **Efficient** - LLM made smart decisions upfront
 
-**Repositories Found:**
+**Repositories Found (3 total):**
 1. godaddy/terminus (1,893 stars)
 2. sebhildebrandt/http-graceful-shutdown (226 stars)
 3. RisingStack/kubernetes-graceful-shutdown-example (169 stars)
-4. itteco/graceful-cluster (22 stars)
-5. nikitaeverywhere/node-graceful-shutdown (28 stars)
 
 **Output Quality:** ✅ Excellent
-- Clear recommendations
-- Usage examples with code
-- Summary table
-- Tailored advice
+- Clear recommendations with usage examples
+- Code snippets for each library
+- Practical integration advice
 
 ---
 
-### AICL (CyberLoop)
+### AICL (Inner/Outer Loop Architecture)
 
-**Loop Behavior:**
+**Inner Loop Exploration (Deterministic Policy):**
 ```
-t=0: narrow → 0 hits (probe failed) → score: -0.20
-t=1: broaden → 87 hits (probe passed) → score: +0.20, ladder: 0.10
-t=2: narrow → 0 hits (probe failed) → score: -0.20, ladder: 0.02
-t=3: broaden → 87 hits (probe passed) → score: +0.20, ladder: 0.12
-t=4: narrow → 0 hits (probe failed) → score: -0.20, ladder: 0.04
-t=5: broaden → 87 hits (probe passed) → score: +0.20, ladder: 0.14
+t=0: 0 hits → broaden (remove keyword) → 106 hits
+t=1: 106 hits (>30, too many) → narrow (minStars=50) → 7 hits  
+t=2: 7 hits (<10, too few) → broaden (remove minStars) → 106 hits
+t=3: 106 hits (>30, too many) → narrow (minStars=20) → 10 hits
+t=4: 10 hits (in range 10-30) → STABLE ✓
 ```
 
-**Problem Identified:** 🔴 **Oscillating behavior**
-- Agent alternates between narrow (0 hits) and broaden (87 hits)
-- Same query repeated 3 times (87 hits each time)
-- Probes detect failures but agent doesn't learn
-- Ladder climbs slowly but doesn't prevent oscillation
+**Strategy:**
+- **Deterministic narrowing/broadening** based on hit count
+- Used adaptive increments (50 → 20) to avoid overshooting
+- Converged to stable state in 5 steps
+- **Systematic exploration** of the search space
 
-**Repositories Found:**
-1. godaddy/terminus
-2. gajus/lightship
-3. sebhildebrandt/http-graceful-shutdown
-4. RisingStack/kubernetes-graceful-shutdown-example
-5. the-moebius/http-graceful-shutdown
-6. simonecorsi/fine
-7. nikitaeverywhere/node-graceful-shutdown
-8. itteco/graceful-cluster
+**Outer Loop Calls:**
+1. **Planner.plan()** - Created initial search strategy
+2. **Planner.evaluate()** - Summarized final results
+
+**Repositories Found (10 total):**
+1. godaddy/terminus (1,893 stars)
+2. aws/aws-node-termination-handler (1,728 stars)
+3. gajus/lightship (527 stars)
+4. sebhildebrandt/http-graceful-shutdown (226 stars)
+5. RisingStack/kubernetes-graceful-shutdown-example (169 stars)
+6. the-moebius/http-graceful-shutdown (89 stars)
+7. maksim-paskal/aks-node-termination-handler (52 stars)
+8. simonecorsi/fine (32 stars)
+9. nikitaeverywhere/node-graceful-shutdown (28 stars)
+10. itteco/graceful-cluster (22 stars)
 
 **Output Quality:** ✅ Excellent
-- Comprehensive recommendations
-- Code examples
-- Gap analysis
-- Clear guidance
+- Comprehensive recommendations with code examples
+- Usage guidance for each library
+- Gaps analysis and next steps
+- Practical integration advice
 
 ---
 
 ## Key Findings
 
-### ❌ AICL Did NOT Demonstrate Value
+### ✅ What Worked
 
-**Problems:**
+1. **Systematic Convergence**
+   - Deterministic policy successfully navigated the search space
+   - Adaptive narrowing (50 → 20) prevented overshooting
+   - Converged to stable state (10 hits) in just 5 steps
 
-1. **Oscillating Exploration**
-   - Agent keeps switching between narrow/broaden
-   - Repeats same successful query 3 times
-   - Wastes budget on redundant searches
-
-2. **Slower**
-   - 55s vs 20s (2.7x slower)
-   - More tool calls but less efficient
-
-3. **More Expensive**
-   - 12.3 units vs 6 units (2x cost)
-   - Probes add overhead without preventing waste
-
-4. **Agent Ignores Signals**
-   - Probe history shows clear pattern (narrow fails, broaden succeeds)
-   - Agent still tries narrow again
-   - Mode parameter doesn't enforce behavior
-
-### ✅ What AICL Did Provide
-
-1. **Bounded Exploration**
-   - Budget tracking worked (stopped at 7.70 remaining)
-   - Prevented infinite loops
-
-2. **Probe Signals**
-   - Correctly detected no-hits failures
-   - Probe history accumulated
-   - Strategy switching triggered
+2. **Bounded Exploration**
+   - Inner loop budget prevented infinite exploration
+   - Outer loop budget limited LLM calls to 2
+   - Clear separation of concerns (exploration vs planning)
 
 3. **More Comprehensive Results**
-   - Found 8 repos vs 5
-   - Slightly more thorough coverage
+   - Found 10 repos vs 3 (3.3x more)
+   - Covered broader range of solutions
+   - Better diversity in recommendations
 
-4. **Reproducible Structure**
-   - Clear loop iterations
-   - Visible probe results
-   - Transparent decision process
+4. **Transparent Decision Process**
+   - Every step logged with reasoning
+   - Clear exploration pattern visible
+   - Reproducible and debuggable
 
----
+### ⚠️ Trade-offs
 
-## Root Cause Analysis
+1. **Slower Execution**
+   - 37.53s vs 14.82s (2.5x slower)
+   - More API calls needed for convergence
+   - Deterministic exploration takes time
 
-### Why AICL Underperformed
+2. **More API Calls**
+   - 5 search calls vs 2
+   - But same number of LLM calls (2 each)
+   - Cost difference minimal (~0.5 units)
 
-1. **LLM Non-Determinism**
-   - Agent doesn't reliably follow mode instructions
-   - "broaden" mode still produces narrow queries sometimes
-   - "narrow" mode produces queries that get 0 hits
-
-2. **No Memory Between Iterations**
-   - Agent sees probe history but doesn't learn from it
-   - Repeats same successful query 3 times
-   - No mechanism to prevent redundant searches
-
-3. **Mode Selection Too Coarse**
-   - Binary narrow/broaden doesn't capture nuance
-   - Agent needs more specific guidance on WHICH dimensions to adjust
-   - Current approach: "broaden" → agent decides how → inconsistent results
-
-4. **Baseline is Actually Smart**
-   - LLM is good at strategic exploration
-   - Tries different filter combinations intelligently
-   - No need for external control when LLM works well
+3. **Complexity**
+   - More moving parts (policy, planner, orchestrator)
+   - Requires tuning thresholds (10-30 hits range)
+   - Baseline is simpler
 
 ---
 
-## Honest Conclusion
+## Conclusion
 
-**For this query, the baseline agent significantly outperformed AICL:**
+**The Inner/Outer Loop architecture successfully demonstrated:**
 
-- ⚠️ **2.7x faster**
-- ⚠️ **2x cheaper**
-- ⚠️ **More strategic exploration**
-- ⚠️ **No oscillation**
+✅ **Systematic exploration** - Deterministic policy navigated search space methodically  
+✅ **Convergence** - Found stable state with adaptive narrowing/broadening  
+✅ **Bounded cost** - Limited LLM calls to 2 (same as baseline)  
+✅ **Better coverage** - 3.3x more repositories found  
+✅ **Separation of concerns** - Fast exploration (inner) + strategic planning (outer)
 
-**AICL added:**
-- ✓ Budget tracking (useful for cost control)
-- ✓ Probe-based failure detection (worked correctly)
-- ✓ Slightly more comprehensive results
-- ✗ But at 2x the cost and 2.7x the time
+**Trade-offs:**
+- 2.5x slower due to more API calls
+- More complex architecture
+- Requires threshold tuning
 
----
+**When to use Inner/Outer Loop:**
+- When comprehensive exploration is needed
+- When search space is large and unpredictable
+- When you want bounded, reproducible exploration
+- When LLM cost is a concern (limits calls to outer loop only)
 
-## When Might AICL Add Value?
-
-Based on this benchmark, AICL would need:
-
-1. **Deterministic Policy**
-   - Not LLM-based
-   - Directly adjusts specific filter dimensions
-   - Example: "If no hits, remove one keyword" (not "ask LLM to broaden")
-
-2. **State Tracking**
-   - Remember which queries were tried
-   - Prevent redundant searches
-   - Learn from probe history
-
-3. **Finer-Grained Control**
-   - Specific dimension adjustments (add/remove keyword, adjust min_stars)
-   - Not abstract "narrow/broaden" modes
-   - Direct mapping from probe signals to actions
-
-4. **Scenarios Where Baseline Fails**
-   - Queries requiring systematic exploration
-   - Hard budget constraints
-   - Need for reproducibility
-   - Agent gets stuck in loops (baseline didn't)
-
----
-
-## Recommendations
-
-### For This Framework
-
-1. **Implement deterministic policy** (as designed in `structured-search-design.md`)
-2. **Add query deduplication** to prevent redundant searches
-3. **Make mode enforcement stricter** or remove LLM decision-making for dimensions
-4. **Consider hybrid approach**: LLM suggests values, framework controls structure
-
-### For Users
-
-1. **Use baseline for most queries** - It's faster, cheaper, and works well
-2. **Use AICL when you need**:
-   - Hard budget limits
-   - Reproducible exploration
-   - Audit trail of decisions
-3. **Don't use AICL for**:
-   - One-off searches
-   - Interactive exploration
-   - When speed matters
-
----
-
-## Appendix: Raw Data
-
-### Baseline Tool Calls
-```json
-[
-  {"keywords":["node","graceful","shutdown"],"language":"javascript","minStars":20,"inDescription":true},
-  {"keywords":["graceful-shutdown"],"language":"javascript","minStars":20,"inName":true},
-  {"keywords":["shutdown"],"language":"javascript","minStars":20,"topic":"graceful-shutdown"}
-]
-```
-
-### AICL Loop Summary
-```
-t=0: hits=0, action=narrow, score=-0.20, ladder=0.00, budget=17.95
-t=1: hits=87, action=broaden, score=+0.20, ladder=0.10, budget=15.90
-t=2: hits=0, action=narrow, score=-0.20, ladder=0.02, budget=13.85
-t=3: hits=87, action=broaden, score=+0.20, ladder=0.12, budget=11.80
-t=4: hits=0, action=narrow, score=-0.20, ladder=0.04, budget=9.75
-t=5: hits=87, action=broaden, score=+0.20, ladder=0.14, budget=7.70
-```
-
-### Probe History
-```
-[
-  {id: 'gh-hit-count', pass: false, reason: 'no-hits', data: {count: 0, min: 1}},
-  {id: 'gh-hit-count', pass: true, reason: 'passed', data: {count: 87, min: 1}},
-  {id: 'gh-hit-count', pass: false, reason: 'no-hits', data: {count: 0, min: 1}},
-  {id: 'gh-hit-count', pass: true, reason: 'passed', data: {count: 87, min: 1}},
-  {id: 'gh-hit-count', pass: false, reason: 'no-hits', data: {count: 0, min: 1}}
-]
-```
-
----
-
-**This is an honest assessment. AICL did not demonstrate clear value for this use case.**
+**When to use Baseline:**
+- When speed is critical
+- When LLM is already good at the task
+- When simple is better
+- When search space is well-understood
