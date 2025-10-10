@@ -5,7 +5,7 @@ import type { Ladder, Policy } from '@/core/interfaces'
 
 import type { GhAction, GhState } from './env'
 import type { GitHubSearchApi } from './search-tool'
-import { createGitHubSearchTool, type GitHubSearchTool } from './search-tool'
+import { createGitHubSearchTool } from './search-tool'
 
 const AgentInputSchema = z.object({
   query: z.string(),
@@ -34,10 +34,10 @@ const ActionSchema = z.object({
 export class AgentQueryPolicy implements Policy<GhState, GhAction, number> {
   public readonly id = 'agent-query-policy'
 
-  private readonly githubTool: GitHubSearchTool
+  private readonly githubTool
 
   constructor(api: GitHubSearchApi) {
-    const toolInstance: GitHubSearchTool = createGitHubSearchTool(api)
+    const toolInstance = createGitHubSearchTool(api)
     this.githubTool = toolInstance
   }
 
