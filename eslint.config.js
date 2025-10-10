@@ -74,7 +74,6 @@ export default defineConfig([
     files: ["**/*.{ts,mts,cts}"],
     rules: {
       "@typescript-eslint/consistent-type-imports": ["warn", { fixStyle: "inline-type-imports" }],
-      "@typescript-eslint/consistent-type-definitions": ["warn", "type"],
       "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }],
       "@typescript-eslint/ban-ts-comment": ["warn", { "ts-expect-error": "allow-with-description" }],
       "@typescript-eslint/no-explicit-any": "off",

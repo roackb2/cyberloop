@@ -2,7 +2,7 @@
   "compilerOptions": {
     /* Basic Options */
     "target": "es2022" /* Specify ECMAScript target version: use ES2022 for modern Node.js runtimes (v18+). */,
-    "module": "nodenext" /* Enable Node-style ES module support. */,
+    "module": "commonjs" /* Enable Node-style ES module support. */,
     "lib": [
       "es2022"
     ] /* Specify library files to be included in the compilation. */,
@@ -36,7 +36,7 @@
     // "noImplicitReturns": true,             /* Report error when not all code paths in function return a value. */
     // "noFallthroughCasesInSwitch": true,    /* Report errors for fallthrough cases in switch statement. */
     /* Module Resolution Options */
-    "moduleResolution": "nodenext" /* Use Node.js ESM module resolution algorithm. */,
+    "moduleResolution": "node" /* Use Node.js ESM module resolution algorithm. */,
     // "baseUrl": "./",                       /* Deprecated: baseUrl is removed in TS 7.0. Avoid using. */
     "paths": {
       "@/*": [
