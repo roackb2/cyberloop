@@ -83,7 +83,8 @@ export default defineConfig([
   // 3) Type-aware TS rules — only for TS files, with a project
   ...tseslint.configs.recommendedTypeChecked,
   {
-    files: ["**/*.{ts,mts,cts}"],
+    files: ["src/**/*.{ts,mts,cts}", "tests/**/*.{ts,mts,cts}"],
+    ignores: ["**/*.config.*", "eslint.config.*"], // prevent config files from using typed rules
     languageOptions: {
       parserOptions: {
         project: ["./tsconfig.json", "./tsconfig.test.json"],
@@ -96,6 +97,7 @@ export default defineConfig([
       "@typescript-eslint/prefer-nullish-coalescing": ["warn", { ignoreTernaryTests: true }],
       "@typescript-eslint/prefer-optional-chain": "warn",
       "@typescript-eslint/no-unnecessary-type-assertion": "warn",
+      "@typescript-eslint/require-await": "warn",
     },
   },
 ]);

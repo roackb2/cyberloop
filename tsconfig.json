@@ -2,22 +2,22 @@
   "compilerOptions": {
     /* Basic Options */
     "target": "es2022" /* Specify ECMAScript target version: use ES2022 for modern Node.js runtimes (v18+). */,
-    "module": "commonjs" /* Enable Node-style ES module support. */,
+    "module": "esnext" /* Keep modern ES module syntax for bundlers like tsup/rollup. */,
     "lib": [
       "es2022"
     ] /* Specify library files to be included in the compilation. */,
     // "allowJs": true,                       /* Allow javascript files to be compiled. */
     // "checkJs": true,                       /* Report errors in .js files. */
     // "jsx": "react-jsx"                     /* Specify JSX code generation: 'preserve', 'react-native', or 'react'. */
-    // "declaration": true,                   /* Generates corresponding '.d.ts' file. */
-    // "declarationMap": true,                /* Generates a sourcemap for each corresponding '.d.ts' file. */
+    "declaration": true, /* Generate corresponding '.d.ts' files for consumers. */
+    "declarationMap": true, /* Generates a sourcemap for each corresponding '.d.ts' file. */
     "sourceMap": true, /* Generates corresponding '.map' file for debugging. */
     // "outFile": "./",                       /* Concatenate and emit output to single file. */
     "outDir": "./dist/", /* Redirect output structure to the directory. */
     "rootDir": "./src", /* Specify the root directory of input files. */
     // "composite": true,                     /* Enable project compilation */
     // "removeComments": true,                /* Do not emit comments to output. */
-    "noEmit": false, /* Do not emit outputs. Keep false if using tsc + tsc-alias pipeline. */
+    "noEmit": false, /* Do not emit outputs. Keep false if using tsup or tsc + tsc-alias pipeline. */
     // "importHelpers": true,                 /* Import emit helpers from 'tslib'. */
     // "downlevelIteration": true,            /* Provide full support for iterables when targeting older ES versions. */
     // "isolatedModules": true,               /* Transpile each file as a separate module (required for tsx). */
@@ -31,18 +31,18 @@
     // "noImplicitThis": true,                /* Raise error on 'this' expressions with an implied 'any' type. */
     // "alwaysStrict": true,                  /* Parse in strict mode and emit "use strict" for each source file. */
     /* Additional Checks */
-    "noUnusedLocals": true, /* Report errors on unused locals. */
-    "noUnusedParameters": true, /* Report errors on unused parameters. */
+    // "noUnusedLocals": true, /* Report errors on unused locals. */
+    // "noUnusedParameters": true, /* Report errors on unused parameters. */
     // "noImplicitReturns": true,             /* Report error when not all code paths in function return a value. */
     // "noFallthroughCasesInSwitch": true,    /* Report errors for fallthrough cases in switch statement. */
     /* Module Resolution Options */
-    "moduleResolution": "node" /* Use Node.js ESM module resolution algorithm. */,
+    "moduleResolution": "bundler" /* Bundler-style resolution (no .js suffix needed). Ideal for library authoring. */,
     // "baseUrl": "./",                       /* Deprecated: baseUrl is removed in TS 7.0. Avoid using. */
     "paths": {
       "@/*": [
         "./src/*"
       ]
-    }, /* Path alias mapping. Works with tsc-alias for runtime rewrites. */
+    }, /* Path alias mapping. Works with tsup or other bundlers for runtime rewrites. */
     "rootDirs": [
       "./src"
     ], /* List of root folders representing the structure of the project at runtime. */
@@ -55,17 +55,17 @@
     // "preserveSymlinks": true,              /* Do not resolve the real path of symlinks. */
     /* Source Map Options */
     // "sourceRoot": "",                      /* Location where debugger should locate TypeScript files. */
-    // "mapRoot": "",                         /* Location where debugger should locate map files. */
+    // "mapRoot": "",                         /* Location where debugger should locate map files instead of generated locations. */
     // "inlineSourceMap": true,               /* Emit a single file with source maps embedded. */
-    // "inlineSources": true,                 /* Emit the source alongside the sourcemaps within a single file. */
+    // "inlineSources": true,                 /* Emit the source alongside the sourcemaps within a single file; requires '--inlineSourceMap' or '--sourceMap' to be set. */
     /* Experimental Options */
     // "experimentalDecorators": true,        /* Enables experimental support for ES7 decorators. */
     // "emitDecoratorMetadata": true,         /* Enables experimental support for emitting type metadata for decorators. */
     /* Compatibility & Quality-of-life Options */
-    "skipLibCheck": true, /* Skip type checking of declaration files. */
+    "skipLibCheck": true, /* Skip type checking of declaration files for faster builds. */
     "forceConsistentCasingInFileNames": true, /* Ensure file name casing consistency across OSes. */
     "resolveJsonModule": true, /* Allow importing .json files as modules. */
-    "verbatimModuleSyntax": true, /* Preserve import/export syntax for cleaner ESM output. */
+    "verbatimModuleSyntax": true /* Preserve import/export syntax for clean ESM output. */
     // "ignoreDeprecations": "6.0"              /* Silence TS6 baseUrl deprecation warning. */
   },
   "include": [
@@ -74,6 +74,7 @@
   "exclude": [
     "node_modules",
     "dist",
+    "tests",
     "eslint.config.*"
   ]
 }
