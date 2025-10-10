@@ -45,7 +45,7 @@
     "test:cov": "vitest --coverage",
     "test:ui": "vitest --ui",
     "examples:quickstart": "tsx src/examples/quickstart.ts",
-    "examples:github": "tsx src/examples/github-query-demo.ts"
+    "examples:github": "tsx src/examples/github-agent-demo.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9.37.0",
@@ -65,5 +65,11 @@
     "typescript-eslint": "^8.46.0",
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^3.2.4"
+  },
+  "dependencies": {
+    "@octokit/rest": "^21.0.0",
+    "@openai/agents": "^0.1.9",
+    "dotenv": "^17.2.3",
+    "zod": "^4.1.12"
   }
 }

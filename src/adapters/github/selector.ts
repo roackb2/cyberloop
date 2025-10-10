@@ -17,6 +17,8 @@ const failurePreferredPolicy: Record<FailureType, GhAction['type']> = {
 export class SearchFailureSelector
   implements StrategySelector<GhState, GhAction>
 {
+  constructor(private readonly opts: { preferLlm?: boolean } = {}) { }
+
   select(input: {
     failure: FailureType
     ladderLevel: number
@@ -27,7 +29,7 @@ export class SearchFailureSelector
     const { failure, ladderLevel, probes, policies } = input
 
     const probe = pickProbe(probes, failure)
-    const policy = pickPolicy(policies, failure, ladderLevel)
+    const policy = pickPolicy(policies, failure, ladderLevel, this.opts)
 
     return { probe, policy }
   }
@@ -46,6 +48,7 @@ function pickPolicy(
   policies: Policy<GhState, GhAction>[],
   failure: FailureType,
   ladderLevel: number,
+  opts: { preferLlm?: boolean },
 ): Policy<GhState, GhAction> {
   const inWindow = policies.filter(p => {
     const [min, max] = p.capabilities?.()?.explorationRange ?? [0, Infinity]
@@ -55,6 +58,10 @@ function pickPolicy(
     (a, b) => (a.capabilities?.()?.cost?.step ?? 1) - (b.capabilities?.()?.cost?.step ?? 1),
   )
   const target = failurePreferredPolicy[failure] ?? 'rephrase'
+  if (opts.preferLlm && failure !== 'NoData') {
+    const llmPolicy = viable.find(p => /llm|agent/i.test(p.id))
+    if (llmPolicy) return llmPolicy
+  }
   const handled = viable.filter(p => p.capabilities?.()?.handles?.includes(failure))
   if (handled.length) return handled[0]
   const matchingId = viable.find(p => p.id.includes(target))

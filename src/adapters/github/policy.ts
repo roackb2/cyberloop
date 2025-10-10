@@ -5,7 +5,7 @@ import type { GhAction, GhState } from './env'
 export const QueryMutatePolicy: Policy<GhState, GhAction, number> = {
   id: 'query-mutate',
   capabilities: () => ({
-    explorationRange: [0, 3],
+    explorationRange: [0, 3] as [number, number],
     cost: { step: 1 },
     handles: ['Unknown', 'NoData', 'TooBroad', 'TooNarrow'],
   }),

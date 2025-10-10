@@ -6,5 +6,5 @@ import type { Feedback, State } from '../types'
  */
 export interface Evaluator<S = State, F = Feedback> {
   /** Evaluate transition from prev -> next (and optionally action inside adapter) */
-  evaluate(prev: S, next: S): F
+  evaluate(prev: S, next: S): F | Promise<F>
 }

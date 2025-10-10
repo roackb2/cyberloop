@@ -54,6 +54,12 @@ yarn examples:quickstart
 
 # Run the GitHub query refinement demo (mock API)
 yarn examples:github "node graceful shutdown"
+
+# Run the GitHub + OpenAI agent demo (requires GITHUB_TOKEN and OPENAI_API_KEY)
+yarn examples:github:agent "node graceful shutdown"
+
+# Tip: create a .env file with GITHUB_TOKEN and OPENAI_API_KEY, then run `node -r dotenv/config ...` if you prefer loading automatically.
+GITHUB_AGENT_QUERY can be set in .env to change the default seed query.
 ```
 
 The GitHub demo prints per-step logs (action, score, ladder level, remaining budget) and highlights probe blocks, strategy switches, and stop reasons to illustrate how the control loop stabilises exploration.

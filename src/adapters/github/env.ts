@@ -1,17 +1,12 @@
 import type { Environment } from '@/core/interfaces'
 
-export interface GhItem {
-  title: string
-  url: string
-  labels?: string[]
-  stars?: number
-}
+import type { GitHubSearchApi } from './search-tool'
 
 export interface GhState {
   query: string
   hits: number
   entropy: number
-  items?: GhItem[]
+  items?: { title: string; url: string; labels?: string[]; stars?: number }[]
 }
 
 export type GhAction =
@@ -19,23 +14,32 @@ export type GhAction =
   | { type: 'narrow'; payload?: { exact?: string[] } }
   | { type: 'rephrase'; payload?: { pattern?: string } }
 
-interface GitHubSearchApi {
-  search(query: string): Promise<{ hits: number; entropy: number; items: GhItem[] }>
-}
-
 export const GitHubSearchEnv = (
   api: GitHubSearchApi,
   seedQuery: string,
+  options: { initialFetch?: boolean } = {},
 ): Environment<GhState, GhAction> => {
   let current: GhState = { query: seedQuery, hits: 0, entropy: 1 }
+  let initialized = false
+  const initialFetch = options.initialFetch ?? true
+
+  const fetch = async (query: string) => {
+    const response = await api.search(query, { perPage: 10 })
+    current = { query, ...response }
+    initialized = true
+    return current
+  }
 
   return {
-    observe: () => current,
+    observe: async () => {
+      if (!initialized && initialFetch) {
+        await fetch(current.query)
+      }
+      return current
+    },
     apply: async (action) => {
       const nextQuery = mutateQuery(current.query, action)
-      const response = await api.search(nextQuery)
-      current = { query: nextQuery, ...response }
-      return current
+      return fetch(nextQuery)
     },
   }
 }
