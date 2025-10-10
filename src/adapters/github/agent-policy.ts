@@ -45,13 +45,11 @@ const ActionSchema = z.object({
 })
 
 export class AgentQueryPolicy implements Policy<GhState, GhAction, number> {
-  public readonly id = 'agent-query-policy'
+  readonly id = 'agent-query-policy'
+  private readonly githubTool: ReturnType<typeof createGitHubSearchTool>
 
-  private readonly githubTool
-
-  constructor(api: GitHubSearchApi) {
-    const toolInstance = createGitHubSearchTool(api)
-    this.githubTool = toolInstance
+  constructor(private readonly api: GitHubSearchApi) {
+    this.githubTool = createGitHubSearchTool(api)
   }
 
   capabilities() {
@@ -68,7 +66,7 @@ export class AgentQueryPolicy implements Policy<GhState, GhAction, number> {
     
     // Override mode based on probe history signals (gradient-based adaptation)
     const recentProbes = (state.probes ?? []).slice(-3)
-    const hasNoHitsFailures = recentProbes.some(p => !p.pass && (p.reason?.includes('no-hits') || p.reason?.includes('drop-to-zero')))
+    const hasNoHitsFailures = recentProbes.some(p => !p.pass && (p.reason?.includes('no-hits') ?? p.reason?.includes('drop-to-zero')))
     const hasStuckAtZero = recentProbes.some(p => !p.pass && p.reason?.includes('stuck-at-zero'))
     
     // If we're stuck with no hits, force broaden mode

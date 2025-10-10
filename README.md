@@ -66,13 +66,15 @@ The GitHub demo prints per-step logs (action, score, ladder level, remaining bud
 
 ### Example Output
 
-See a complete walkthrough with actual agent output: **[GitHub Agent Demo: Intelligent Repository Search](./docs/examples/github-agent-demo.md)**
+**[📊 Honest Comparison: AICL vs Baseline](./docs/examples/baseline-comparison.md)** - When does AICL actually help?
 
-**What it demonstrates:**
-- ✅ Probes as gradient signals (not hard blockers)
-- ✅ Self-correcting exploration (narrow → broaden when stuck)
-- ✅ Actionable intelligence (answers with code examples)
-- ✅ Bounded resource use (budget tracking, stagnation detection)
+**[🎯 GitHub Agent Demo](./docs/examples/github-agent-demo.md)** - Complete walkthrough with actual output
+
+**What AICL provides:**
+- ✅ Bounded exploration (budget tracking, stagnation detection)
+- ✅ Probe-based failure detection (gradient signals)
+- ✅ Reproducible control structure
+- ⚠️ **Trade-off**: Added complexity and cost vs simple LLM agents
 
 ---
 
