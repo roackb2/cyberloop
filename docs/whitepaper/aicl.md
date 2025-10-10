@@ -16,9 +16,9 @@ highly capable but unstable, unbounded, and unable to sustain learning in dynami
 
 This whitepaper introduces **AICL (Artificial Intelligence Control Loop)**,
 a control-theoretic framework for building *sustainable, self-correcting intelligence*.
-AICL models cognition as a closed feedback loop composed of four modules—
-**Environment**, **Policy**, **Evaluator**, and **Ladder**—
-enabling agents to sense, act, evaluate, and adapt continuously.
+AICL models cognition as a closed feedback loop composed of seven modules—
+**Environment**, **Policy**, **Evaluator**, **Ladder**, **Probe**, **BudgetTracker**, and **StrategySelector**—
+enabling agents to sense, act, evaluate, and adapt continuously under bounded resources.
 
 We present its first open-source implementation, **CyberLoop**,
 a TypeScript-based framework that operationalizes AICL through
@@ -50,12 +50,15 @@ the next decade will be defined by *stabilizing it.*
 This paper introduces **AICL – the Artificial Intelligence Control Loop**,
 a control-theoretic framework for sustainable and self-correcting intelligence.
 AICL models an intelligent system not as a black-box predictor,
-but as a closed feedback loop composed of four core modules:
+but as a closed feedback loop composed of seven core modules:
 
 1. **Environment** — provides observable states and constraints.
 2. **Policy** — determines actions and relaxation strategies.
 3. **Evaluator** — measures progress and stability signals.
 4. **Ladder** — an internal gradient that regulates exploration intensity.
+5. **Probe** — performs cheap, deterministic feasibility checks.
+6. **BudgetTracker** — enforces limits on exploration cost or step count.
+7. **StrategySelector** — chooses new control policies when the current strategy fails.
 
 Together, these modules enable an agent to **sense, act, evaluate, and adapt**
 within a bounded yet expandable feedback loop.
@@ -95,6 +98,9 @@ but to sustain a stable, adaptive trajectory through uncertainty.
 | **Policy (P)** | Action generator | Produces actions based on the current state and internal relaxation gradient. |
 | **Evaluator (V)** | Feedback signal | Measures progress, stability, or constraint violation; provides feedback to guide adjustment. |
 | **Ladder (L)** | Internal gradient | Modulates the exploration–exploitation balance through controlled relaxation. |
+| **Probe (B)** | Feasibility tester | Performs low-cost checks to confirm that a direction or query is viable before full execution. |
+| **BudgetTracker (C)** | Resource regulator | Tracks cumulative cost, step count, or token usage, enforcing bounded exploration. |
+| **StrategySelector (S)** | Meta-controller | Selects or switches policy configurations based on failure patterns or feedback entropy. |
 
 ---
 
@@ -103,11 +109,14 @@ but to sustain a stable, adaptive trajectory through uncertainty.
 At each iteration *t*:
 
 1. Observe state \( s_t \) from environment \( E \).
-2. Generate action \( a_t = P(s_t, L_t) \).
-3. Apply action to environment: \( s_{t+1} = E(a_t) \).
-4. Compute feedback \( f_t = V(s_{t+1}, s_t, a_t) \).
-5. Update ladder \( L_{t+1} = g(L_t, f_t) \).
-6. Adapt policy:
+2. Execute **Probe** to cheaply test potential directions.
+3. Generate action \( a_t = P(s_t, L_t) \).
+4. Apply action to environment: \( s_{t+1} = E(a_t) \).
+5. Compute feedback \( f_t = V(s_{t+1}, s_t, a_t) \).
+6. Update ladder \( L_{t+1} = g(L_t, f_t) \).
+7. Update budget \( C_{t+1} = C_t + cost(a_t) \).
+8. If budget exhausted or instability detected, invoke **StrategySelector** to switch control policy.
+9. Adapt policy:
 
 $$
 \nabla P = \alpha \cdot \nabla_L P + \beta \cdot \nabla_V P + \gamma \cdot \nabla_E P
@@ -142,6 +151,10 @@ interface Environment<State, Action> {
   apply(action: Action): Promise<State>
 }
 
+interface Probe<State, Result> {
+  test(state: State): Result
+}
+
 interface Evaluator<State, Feedback> {
   evaluate(prev: State, next: State): Feedback
 }
@@ -149,6 +162,15 @@ interface Evaluator<State, Feedback> {
 interface Ladder<Feedback> {
   update(feedback: Feedback): void
   getLevel(): number
+}
+
+interface BudgetTracker {
+  record(cost: number): void
+  remaining(): number
+}
+
+interface StrategySelector<Policy> {
+  select(current: Policy, signal: any): Policy
 }
 
 interface Policy<State, Action> {
@@ -165,6 +187,8 @@ The DepSolver experiment validates two fundamental principles of AICL:
 
 1. **Controlled Exploration** — the relaxation ladder modulates exploration intensity.
 2. **Sustainable Adaptation** — the system achieves goals without exponential instability.
+3. **Bounded Resource Use** — the budget tracker prevents unbounded search.
+4. **Strategic Switching** — strategy selector dynamically reconfigures search modes.
 
 | Solver | Success ↑ | Cost ↓ | Stability ↓ |
 |---------|------------|----------|--------------|
@@ -188,7 +212,7 @@ AICL answers this through bounded, feedback-driven autonomy.
 |-------|----------|---------|
 | Core Kernel | cyberloop/core | Base control loop |
 | Domain Adapters | dep-solver, knowledge-synth | Plug-in environments |
-| Control Plugins | ladder variants | Extend feedback behaviors |
+| Control Plugins | ladder variants, probe strategies | Extend feedback behaviors |
 | Monitoring Tools | dashboard, metrics | Visualize control dynamics |
 
 ---
@@ -205,5 +229,5 @@ from artificial intelligence to **controlled intelligence**.
 
 ---
 
-*End of AICL Whitepaper v0.1*
+*End of AICL Whitepaper v0.2 (with Probe, BudgetTracker, and StrategySelector)*
 © 2025 Fienna Liang. Licensed under Apache-2.0.

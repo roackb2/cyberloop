@@ -14,7 +14,7 @@
 **CyberLoop** is the reference implementation of **AICL (Artificial Intelligence Control Loop)** —
 a control-theoretic framework for building **sustainable, self-correcting intelligent systems**.
 
-AICL models intelligence as a **closed feedback loop** consisting of four key modules:
+AICL models intelligence as a **closed feedback loop** consisting of **seven key modules**:
 
 | Module | Role |
 |--------|------|
@@ -22,17 +22,20 @@ AICL models intelligence as a **closed feedback loop** consisting of four key mo
 | `Policy` | Generates actions and adapts to feedback |
 | `Evaluator` | Measures performance and stability |
 | `Ladder` | Regulates exploration vs. exploitation (the “relaxation ladder”) |
+| `Probe` | Performs low-cost deterministic feasibility checks |
+| `BudgetTracker` | Tracks and constrains exploration cost |
+| `StrategySelector` | Dynamically switches control policies when the current strategy fails |
 
-Together, these form a reusable architecture for developing **agentic systems** that can explore unknown domains while maintaining stability.
+Together, these form a reusable architecture for developing **agentic systems** that can explore unknown domains while maintaining stability and bounded cost.
 
 ---
 
 ## Goals
 
-- 🔁 **Control Loop Intelligence** — build agents that adapt stably, not just optimally
+- 🔁 **Controlled Intelligence** — build agents that adapt stably, not just optimally
 - 🧩 **Interface-Driven Design** — plug in domain-specific adapters with clear contracts
-- 🧠 **Sustainable Learning** — maintain coherence under dynamic environments
-- 🌍 **Open Source Research Platform** — validate the AICL framework across domains
+- 🧠 **Sustainable Learning** — maintain coherence under dynamic, uncertain environments
+- 🌍 **Open Source Research Platform** — validate the AICL framework across domains (e.g., dependency solving, query refinement, knowledge retrieval)
 
 ---
 
@@ -40,8 +43,8 @@ Together, these form a reusable architecture for developing **agentic systems** 
 
 ```bash
 # Clone the repository
-git clone https://github.com/<your-username>/cyberloop.git
-cd cyberloop
+git clone https://github.com/roackb2/cyber-loop.git
+cd cyber-loop
 
 # Install dependencies
 npm install
@@ -57,12 +60,12 @@ npm run demo
 ```
 .
 ├── src/
-│   ├── core/         # AICL core loop (Environment, Policy, Evaluator, Ladder)
-│   ├── adapters/     # Domain adapters (e.g. dep-solver, knowledge-synth)
-│   ├── examples/     # Experimental demos
-│   └── utils/        # Shared interfaces and helpers
+│   ├── core/            # AICL core loop (Environment, Policy, Evaluator, Ladder, Probe, BudgetTracker, StrategySelector)
+│   ├── adapters/        # Domain adapters (e.g. dep-solver, github-query, knowledge-synth)
+│   ├── examples/        # Experimental demos
+│   └── utils/           # Shared interfaces and helpers
 ├── docs/
-│   └── whitepaper/   # AICL Whitepaper v0.1
+│   └── whitepaper/      # AICL Whitepaper v0.2
 └── README.md
 ```
 
@@ -70,10 +73,10 @@ npm run demo
 
 ## References
 
-- [📜 AICL Whitepaper v0.1](./docs/whitepaper/aicl.md)
-- [🎯 Vision Note: Controlled Sustainable Intelligence](https://github.com/<your-username>/cyberloop/discussions)
+- [📜 AICL Whitepaper v0.2](./docs/whitepaper/AICL_Whitepaper_v0.2.md)
+- [🎯 Vision Note: Controlled Sustainable Intelligence](https://github.com/roackb2/cyber-loop/discussions)
 
 ---
 
-**© 2025 Fienna Liang**
+**© 2025 Jay / Fienna Liang**
 Licensed under **Apache-2.0**
