@@ -2,6 +2,7 @@ import {
   CheapPassProbe,
   ProportionalLadder,
   RuleBasedStrategySelector,
+  ReasonFailureClassifier,
   SimpleBudgetTracker,
   ThresholdEvaluator,
 } from '@/core/defaults.js'
@@ -34,7 +35,7 @@ async function main() {
     probes: [CheapPassProbe<number>()],
     policies: [simplePolicy],
     maxSteps: 5,
-    classify: () => 'Unknown',
+    failureClassifier: new ReasonFailureClassifier<number, number>(),
   })
 
   const res = await orch.run()

@@ -1,4 +1,5 @@
 import type { Environment, Evaluator, Ladder, Policy } from './interfaces'
+import { withRetry } from './utils/retry'
 
 export interface ControlLoopResult<S, A, F> {
   state: S
@@ -10,6 +11,12 @@ export interface ControlLoopResult<S, A, F> {
 export interface ControlLoopOptions<S> {
   /** Use pre-observed state (avoids re-observing when probes already sampled it). */
   state?: S
+  retry?: {
+    observe?: number
+    decide?: number
+    apply?: number
+    evaluate?: number
+  }
 }
 
 /**
@@ -22,10 +29,22 @@ export async function controlLoop<S, A, F>(
   ladder: Ladder<F>,
   options: ControlLoopOptions<S> = {},
 ): Promise<ControlLoopResult<S, A, F>> {
-  const state = options.state ?? (await env.observe())
-  const action = await policy.decide(state, ladder)
-  const next = await env.apply(action)
-  const feedback = await evaluator.evaluate(state, next)
+  const retry = options.retry ?? {}
+  const state =
+    options.state ??
+    (await withRetry(() => env.observe(), retry.observe ?? 0))
+  const action = await withRetry(
+    () => policy.decide(state, ladder),
+    retry.decide ?? 0,
+  )
+  const next = await withRetry(
+    () => env.apply(action),
+    retry.apply ?? 0,
+  )
+  const feedback = await withRetry(
+    () => evaluator.evaluate(state, next),
+    retry.evaluate ?? 0,
+  )
 
   policy.adapt?.(feedback, ladder)
   ladder.update(feedback)

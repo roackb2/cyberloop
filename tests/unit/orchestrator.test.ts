@@ -118,7 +118,13 @@ describe('Orchestrator', () => {
       policy,
     })
     expect(onStep).toHaveBeenCalledTimes(1)
-    expect(onStep).toHaveBeenCalledWith(first)
+    expect(onStep).toHaveBeenCalledWith({
+      t: 0,
+      state: 0,
+      action: 2,
+      next: 3,
+      feedback: 0.75,
+    })
     expect(final).toBe(3)
   })
 })
