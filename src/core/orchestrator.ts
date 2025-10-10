@@ -7,9 +7,10 @@ import type {
   Probe,
   StrategySelector,
 } from './interfaces'
+import { controlLoop } from './loop'
 import type { Action, Cost, FailureType, Feedback, Signal, State } from './types'
 
-export interface StepLog<S, A> {
+export interface StepLog<S, A, F> {
   t: number
   state: S
   action?: A
@@ -19,6 +20,7 @@ export interface StepLog<S, A> {
   ladderLevel: number
   budgetRemaining: number
   note?: string
+  feedback?: F
 }
 
 export interface OrchestratorOpts<S, A, F> {
@@ -56,7 +58,7 @@ export class Orchestrator<S = State, A = Action, F = Feedback> {
   private readonly classify?: OrchestratorOpts<S, A, F>['classify']
   private readonly costOf?: OrchestratorOpts<S, A, F>['costOf']
 
-  public logs: StepLog<S, A>[] = []
+  public logs: StepLog<S, A, F>[] = []
 
   constructor(opts: OrchestratorOpts<S, A, F>) {
     this.env = opts.env
@@ -71,7 +73,7 @@ export class Orchestrator<S = State, A = Action, F = Feedback> {
     this.costOf = opts.costOf
   }
 
-  async run(): Promise<{ final?: S; logs: StepLog<S, A>[] }> {
+  async run(): Promise<{ final?: S; logs: StepLog<S, A, F>[] }> {
     for (let t = 0; t < this.maxSteps; t++) {
       const res = await this.step(t)
       this.logs.push(res)
@@ -81,7 +83,7 @@ export class Orchestrator<S = State, A = Action, F = Feedback> {
     return { final: last?.next ?? last?.state, logs: this.logs }
   }
 
-  private async step(t: number): Promise<StepLog<S, A>> {
+  private async step(t: number): Promise<StepLog<S, A, F>> {
     const state = await this.env.observe()
     const ladderLevel = this.ladder.level()
     const budgetRemaining = this.budget.remaining()
@@ -127,17 +129,18 @@ export class Orchestrator<S = State, A = Action, F = Feedback> {
       }
     }
 
-    // 3. Generate action & apply
-    const action = await policy.decide(state, this.ladder)
+    // 3. Run pure control kernel (observe/decide/act/evaluate/adapt)
+    const { action, next, feedback } = await controlLoop<S, A, F>(
+      this.env,
+      this.evaluator,
+      policy,
+      this.ladder,
+      { state },
+    )
     const aCost = this.costOf?.(action) ?? (policy.capabilities?.()?.cost?.step ?? 1)
     if (aCost) this.budget.record(aCost)
-
-    const next = await this.env.apply(action)
-
-    // 4. Evaluate feedback and update ladder
-    const score = (this.evaluator.evaluate(state, next) as unknown) as number
-    policy.adapt?.((score as unknown) as F, this.ladder)
-    this.ladder.update((score as unknown) as F)
+    let score: number | undefined
+    if (typeof feedback === 'number') score = feedback
 
     return {
       t,
@@ -147,6 +150,7 @@ export class Orchestrator<S = State, A = Action, F = Feedback> {
       score,
       ladderLevel: this.ladder.level(),
       budgetRemaining: this.budget.remaining(),
+      feedback,
     }
   }
 }
