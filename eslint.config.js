@@ -87,7 +87,7 @@ export default defineConfig([
     ignores: ["**/*.config.*", "eslint.config.*"], // prevent config files from using typed rules
     languageOptions: {
       parserOptions: {
-        project: ["./tsconfig.json", "./tsconfig.test.json"],
+        project: ["./tsconfig.json", "./tests/tsconfig.json"],
         tsconfigRootDir,
       },
     },

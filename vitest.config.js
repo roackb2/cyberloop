@@ -17,5 +17,5 @@ export default defineConfig({
     },
     pool: "threads",                  // speed via worker threads
   },
-  plugins: [tsconfigPaths({ projects: ["./tsconfig.json", "./tsconfig.test.json"] })]
+  plugins: [tsconfigPaths({ projects: ["./tsconfig.json", "./tests/tsconfig.json"] })]
 });
