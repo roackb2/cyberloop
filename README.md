@@ -64,6 +64,16 @@ GITHUB_AGENT_QUERY can be set in .env to change the default seed query.
 
 The GitHub demo prints per-step logs (action, score, ladder level, remaining budget) and highlights probe blocks, strategy switches, and stop reasons to illustrate how the control loop stabilises exploration.
 
+### Example Output
+
+See a complete walkthrough with actual agent output: **[GitHub Agent Demo: Intelligent Repository Search](./docs/examples/github-agent-demo.md)**
+
+**What it demonstrates:**
+- ✅ Probes as gradient signals (not hard blockers)
+- ✅ Self-correcting exploration (narrow → broaden when stuck)
+- ✅ Actionable intelligence (answers with code examples)
+- ✅ Bounded resource use (budget tracking, stagnation detection)
+
 ---
 
 ## Project Structure
@@ -76,6 +86,7 @@ The GitHub demo prints per-step logs (action, score, ladder level, remaining bud
 │   ├── examples/        # Experimental demos
 │   └── utils/           # Shared interfaces and helpers
 ├── docs/
+│   ├── examples/        # Example walkthroughs with output
 │   └── whitepaper/      # AICL Whitepaper v0.2
 └── README.md
 ```

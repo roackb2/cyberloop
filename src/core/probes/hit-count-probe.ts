@@ -27,15 +27,15 @@ export const HitCountProbe = <S>(
     test: (state) => {
       const count = getCount(state)
       if (!Number.isFinite(count)) {
-        return { pass: false, reason: 'hit-count-invalid' }
+        return { pass: false, reason: 'hit-count-invalid', data: { count } }
       }
       if (count < min) {
-        return { pass: false, reason: 'no-hits' }
+        return { pass: false, reason: 'no-hits', data: { count, min } }
       }
       if (count > max) {
-        return { pass: false, reason: 'too-many-hits' }
+        return { pass: false, reason: 'too-many-hits', data: { count, max } }
       }
-      return { pass: true }
+      return { pass: true, data: { count, min, max } }
     },
   }
 }

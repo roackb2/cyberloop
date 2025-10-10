@@ -11,7 +11,7 @@ import type {
 } from './interfaces'
 import { controlLoop } from './loop'
 import type { LoopEvents } from './runtime/events'
-import type { Action, Cost, FailureType, Feedback, State } from './types'
+import type { Action, Cost, FailureType, Feedback, ProbeResult, State } from './types'
 import { withRetry } from './utils/retry'
 
 export interface StepLog<S, A, F> {
@@ -27,6 +27,7 @@ export interface StepLog<S, A, F> {
   feedback?: F
   policyId?: string
   probeId?: string
+  probeResult?: unknown
 }
 
 interface RetryConfig {
@@ -204,7 +205,7 @@ export class Orchestrator<S = State, A = Action, F = Feedback> {
   }
 
   private async step(t: number): Promise<StepLog<S, A, F>> {
-    const state = await withRetry(
+    let state = await withRetry(
       () => this.env.observe(),
       this.retry.observe ?? 0,
     )
@@ -220,38 +221,37 @@ export class Orchestrator<S = State, A = Action, F = Feedback> {
       policies: this.policies,
     })
 
-    const runProbe = async (
-      currentProbe: Probe<S>,
-      attempt: number,
-    ): Promise<Awaited<ReturnType<Probe<S>['test']>>> => {
-      this.events?.onProbeStart?.({ t, state, probe: currentProbe, attempt })
-      const result = await withRetry(
-        () => currentProbe.test(state),
-        this.retry.probe ?? 0,
-      )
-      this.events?.onProbeResult?.({ t, state, probe: currentProbe, attempt, result })
-      const probeCost = currentProbe.capabilities?.()?.cost ?? 0
-      this.recordCost(t, probeCost)
-      return result
-    }
+    // 2. Run cheap deterministic probe to test feasibility (AICL spec: step 2)
+    // Probe result is a gradient signal, not a hard blocker
+    this.events?.onProbeStart?.({ t, state, probe, attempt: 1 })
+    const probeResult = await withRetry(
+      () => probe.test(state),
+      this.retry.probe ?? 0,
+    )
+    this.events?.onProbeResult?.({ t, state, probe, attempt: 1, result: probeResult })
+    const probeCost = probe.capabilities?.()?.cost ?? 0
+    this.recordCost(t, probeCost)
+    // @ts-expect-error - TS doesn't understand that S is already resolved from awaited observe()
+    state = this.updateProbeHistory(state, probeResult, probe)
 
-    // 2. Run cheap deterministic probe(s)
-    let attempt = 1
-    let probeResult = await runProbe(probe, attempt)
-
+    // If probe fails, classify failure and potentially switch strategy
+    // But ALWAYS continue to policy execution (probe is a signal, not a blocker)
     if (!probeResult.pass) {
-      const failure =
-        this.classifyFailure(state, probeResult.reason)
+      const failure = this.classifyFailure(state, probeResult.reason)
       const previousProbe = probe
       const previousPolicy = policy
-        // Reselect strategy based on failure type
-        ; ({ probe, policy } = this.selector.select({
-          failure,
-          ladderLevel,
-          budgetRemaining: this.budget.remaining(),
-          probes: this.probes,
-          policies: this.policies,
-        }))
+      
+      // Reselect strategy based on failure type
+      const selected = this.selector.select({
+        failure,
+        ladderLevel,
+        budgetRemaining: this.budget.remaining(),
+        probes: this.probes,
+        policies: this.policies,
+      })
+      probe = selected.probe
+      policy = selected.policy
+      
       if (
         (previousProbe.id !== probe.id) ||
         (previousPolicy.id !== policy.id)
@@ -263,29 +263,6 @@ export class Orchestrator<S = State, A = Action, F = Feedback> {
           reason: failure,
         })
       }
-
-      attempt += 1
-      const probeResult2 = await runProbe(probe, attempt)
-      if (!probeResult2.pass || this.budget.shouldStop()) {
-        const failureLog: StepLog<S, A, F> = {
-          t,
-          state,
-          failure,
-          ladderLevel: this.ladder.level(),
-          budgetRemaining: this.budget.remaining(),
-          note: probeResult2.reason ?? 'probe-not-passed',
-          probeId: probe.id,
-          policyId: policy.id,
-        }
-        this.events?.onStep?.({
-          t,
-          state,
-          failure,
-          note: failureLog.note,
-        })
-        return failureLog
-      }
-      probeResult = probeResult2
     }
 
     // 3. Run pure control kernel (observe/decide/act/evaluate/adapt)
@@ -318,6 +295,7 @@ export class Orchestrator<S = State, A = Action, F = Feedback> {
       feedback,
       policyId: policy.id,
       probeId: probe.id,
+      probeResult,
     }
     this.events?.onStep?.({
       t,
@@ -327,5 +305,24 @@ export class Orchestrator<S = State, A = Action, F = Feedback> {
       feedback,
     })
     return log
+  }
+
+  private updateProbeHistory(state: S, probeResult: ProbeResult, probe: Probe<S>): S {
+    // Only mutate if state is an object (not a primitive)
+    if (typeof state !== 'object' || state === null) {
+      return state
+    }
+    
+    // Mutate state object to add probe history (state is typically an object with probes array)
+    const maybe = state as unknown as { probes?: { id: string; pass: boolean; reason?: string; data?: unknown }[] }
+    const result = probeResult as ProbeResult & { data?: unknown }
+    const entry = {
+      id: probe.id,
+      pass: result.pass,
+      reason: result.reason,
+      data: result.data,
+    }
+    maybe.probes = [...(maybe.probes ?? []), entry].slice(-10)
+    return state
   }
 }
