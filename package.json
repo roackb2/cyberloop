@@ -1,0 +1,30 @@
+{
+  "name": "cyberloop",
+  "version": "1.0.0",
+  "description": "Artificial Intelligence Control Loop",
+  "keywords": [
+    "AI",
+    "AICL",
+    "cybernetic",
+    "control",
+    "theory"
+  ],
+  "homepage": "https://github.com/roackb2/cyberloop#readme",
+  "bugs": {
+    "url": "https://github.com/roackb2/cyberloop/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/roackb2/cyberloop.git"
+  },
+  "license": "Apache-2.0",
+  "author": "Jay / Fienna Liang (roackb2@gmail.com)",
+  "type": "commonjs",
+  "main": "src/index.ts",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}
