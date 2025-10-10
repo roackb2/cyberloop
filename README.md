@@ -47,11 +47,16 @@ git clone https://github.com/roackb2/cyber-loop.git
 cd cyber-loop
 
 # Install dependencies
-npm install
+yarn install
 
-# Run example (coming soon)
-npm run demo
+# Run the numeric quickstart loop
+yarn examples:quickstart
+
+# Run the GitHub query refinement demo (mock API)
+yarn examples:github "node graceful shutdown"
 ```
+
+The GitHub demo prints per-step logs (action, score, ladder level, remaining budget) and highlights probe blocks, strategy switches, and stop reasons to illustrate how the control loop stabilises exploration.
 
 ---
 

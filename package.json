@@ -44,7 +44,8 @@
     "test:watch": "vitest --watch",
     "test:cov": "vitest --coverage",
     "test:ui": "vitest --ui",
-    "examples:quickstart": "tsx src/examples/quickstart.ts"
+    "examples:quickstart": "tsx src/examples/quickstart.ts",
+    "examples:github": "tsx src/examples/github-query-demo.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9.37.0",
