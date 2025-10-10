@@ -21,6 +21,29 @@ export interface StepLog<S, A, F> {
   budgetRemaining: number
   note?: string
   feedback?: F
+  policyId?: string
+  probeId?: string
+}
+
+export interface OrchestratorEvents<S, A, F> {
+  onProbeStart?(info: { t: number; state: S; probe: Probe<S>; attempt: number }): void
+  onProbeResult?(info: {
+    t: number
+    state: S
+    probe: Probe<S>
+    attempt: number
+    result: Awaited<ReturnType<Probe<S>['test']>>
+  }): void
+  onAction?(info: {
+    t: number
+    state: S
+    action: A
+    next: S
+    feedback: F
+    policy: Policy<S, A, F>
+  }): void
+  onStep?(log: StepLog<S, A, F>): void
+  onBudget?(info: { t: number; delta: number; before: number; after: number }): void
 }
 
 export interface OrchestratorOpts<S, A, F> {
@@ -40,6 +63,7 @@ export interface OrchestratorOpts<S, A, F> {
     signal?: Signal
   }) => FailureType
   costOf?: (a: A) => Cost
+  events?: OrchestratorEvents<S, A, F>
 }
 
 /**
@@ -57,6 +81,7 @@ export class Orchestrator<S = State, A = Action, F = Feedback> {
   private readonly maxSteps: number
   private readonly classify?: OrchestratorOpts<S, A, F>['classify']
   private readonly costOf?: OrchestratorOpts<S, A, F>['costOf']
+  private readonly events?: OrchestratorEvents<S, A, F>
 
   public logs: StepLog<S, A, F>[] = []
 
@@ -71,6 +96,15 @@ export class Orchestrator<S = State, A = Action, F = Feedback> {
     this.maxSteps = opts.maxSteps ?? 50
     this.classify = opts.classify
     this.costOf = opts.costOf
+    this.events = opts.events
+  }
+
+  private recordCost(t: number, delta: number): void {
+    if (!delta) return
+    const before = this.budget.remaining()
+    this.budget.record(delta)
+    const after = this.budget.remaining()
+    this.events?.onBudget?.({ t, delta, before, after })
   }
 
   async run(): Promise<{ final?: S; logs: StepLog<S, A, F>[] }> {
@@ -86,21 +120,32 @@ export class Orchestrator<S = State, A = Action, F = Feedback> {
   private async step(t: number): Promise<StepLog<S, A, F>> {
     const state = await this.env.observe()
     const ladderLevel = this.ladder.level()
-    const budgetRemaining = this.budget.remaining()
+    const initialBudget = this.budget.remaining()
 
     // 1. Select probe & policy (initially assume unknown failure)
     let { probe, policy } = this.selector.select({
       failure: 'Unknown',
       ladderLevel,
-      budgetRemaining,
+      budgetRemaining: initialBudget,
       probes: this.probes,
       policies: this.policies,
     })
 
-    // 2. Run cheap deterministic probe
-    const probeResult = await probe.test(state)
-    const probeCost = probe.capabilities?.()?.cost ?? 0
-    if (probeCost) this.budget.record(probeCost)
+    const runProbe = async (
+      currentProbe: Probe<S>,
+      attempt: number,
+    ): Promise<Awaited<ReturnType<Probe<S>['test']>>> => {
+      this.events?.onProbeStart?.({ t, state, probe: currentProbe, attempt })
+      const result = await currentProbe.test(state)
+      this.events?.onProbeResult?.({ t, state, probe: currentProbe, attempt, result })
+      const probeCost = currentProbe.capabilities?.()?.cost ?? 0
+      this.recordCost(t, probeCost)
+      return result
+    }
+
+    // 2. Run cheap deterministic probe(s)
+    let attempt = 1
+    let probeResult = await runProbe(probe, attempt)
 
     if (!probeResult.pass) {
       const failure =
@@ -114,19 +159,22 @@ export class Orchestrator<S = State, A = Action, F = Feedback> {
           policies: this.policies,
         }))
 
-      const probeResult2 = await probe.test(state)
-      const probeCost2 = probe.capabilities?.()?.cost ?? 0
-      if (probeCost2) this.budget.record(probeCost2)
+      attempt += 1
+      const probeResult2 = await runProbe(probe, attempt)
       if (!probeResult2.pass || this.budget.shouldStop()) {
-        return {
+        const failureLog: StepLog<S, A, F> = {
           t,
           state,
           failure,
           ladderLevel: this.ladder.level(),
           budgetRemaining: this.budget.remaining(),
           note: probeResult2.reason ?? 'probe-not-passed',
+          probeId: probe.id,
         }
+        this.events?.onStep?.(failureLog)
+        return failureLog
       }
+      probeResult = probeResult2
     }
 
     // 3. Run pure control kernel (observe/decide/act/evaluate/adapt)
@@ -138,19 +186,22 @@ export class Orchestrator<S = State, A = Action, F = Feedback> {
       { state },
     )
     const aCost = this.costOf?.(action) ?? (policy.capabilities?.()?.cost?.step ?? 1)
-    if (aCost) this.budget.record(aCost)
-    let score: number | undefined
-    if (typeof feedback === 'number') score = feedback
+    this.recordCost(t, aCost)
+    this.events?.onAction?.({ t, state, action, next, feedback, policy })
 
-    return {
+    const log: StepLog<S, A, F> = {
       t,
       state,
       action,
       next,
-      score,
+      score: typeof feedback === 'number' ? feedback : undefined,
       ladderLevel: this.ladder.level(),
       budgetRemaining: this.budget.remaining(),
       feedback,
+      policyId: policy.id,
+      probeId: probe.id,
     }
+    this.events?.onStep?.(log)
+    return log
   }
 }

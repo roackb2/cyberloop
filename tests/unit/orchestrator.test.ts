@@ -54,6 +54,12 @@ describe('Orchestrator', () => {
 
     const budget = new SimpleBudgetTracker(10)
 
+    const onProbeStart = vi.fn()
+    const onProbeResult = vi.fn()
+    const onAction = vi.fn()
+    const onStep = vi.fn()
+    const onBudget = vi.fn()
+
     const orchestrator = new Orchestrator<number, number, number>({
       env,
       evaluator,
@@ -63,12 +69,26 @@ describe('Orchestrator', () => {
       probes: [probe],
       policies: [policy],
       maxSteps: 1,
+      events: { onProbeStart, onProbeResult, onAction, onStep, onBudget },
     })
 
     const { logs, final } = await orchestrator.run()
 
     expect(select).toHaveBeenCalledTimes(1)
+    expect(onProbeStart).toHaveBeenCalledWith({
+      t: 0,
+      state: 0,
+      probe,
+      attempt: 1,
+    })
     expect(probeTest).toHaveBeenCalledWith(0)
+    expect(onProbeResult).toHaveBeenCalledWith({
+      t: 0,
+      state: 0,
+      probe,
+      attempt: 1,
+      result: { pass: true },
+    })
     expect(observe).toHaveBeenCalledTimes(1)
     expect(apply).toHaveBeenCalledWith(2)
     expect(decide).toHaveBeenCalledWith(0, ladder)
@@ -76,6 +96,7 @@ describe('Orchestrator', () => {
     expect(update).toHaveBeenCalledWith(0.75)
     expect(ladder.level()).toBeCloseTo(0.75)
     expect(budget.remaining()).toBe(8)
+    expect(onBudget).toHaveBeenCalledWith({ t: 0, delta: 2, before: 10, after: 8 })
 
     expect(logs).toHaveLength(1)
     const [first] = logs
@@ -86,6 +107,18 @@ describe('Orchestrator', () => {
     expect(first.state).toBe(0)
     expect(first.ladderLevel).toBeCloseTo(0.75)
     expect(first.budgetRemaining).toBe(8)
+    expect(first.policyId).toBe('policy')
+    expect(first.probeId).toBe('probe')
+    expect(onAction).toHaveBeenCalledWith({
+      t: 0,
+      state: 0,
+      action: 2,
+      next: 3,
+      feedback: 0.75,
+      policy,
+    })
+    expect(onStep).toHaveBeenCalledTimes(1)
+    expect(onStep).toHaveBeenCalledWith(first)
     expect(final).toBe(3)
   })
 })
