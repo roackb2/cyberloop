@@ -11,19 +11,18 @@
     // "jsx": "react-jsx"                     /* Specify JSX code generation: 'preserve', 'react-native', or 'react'. */
     // "declaration": true,                   /* Generates corresponding '.d.ts' file. */
     // "declarationMap": true,                /* Generates a sourcemap for each corresponding '.d.ts' file. */
-    "sourceMap": true,                       /* Generates corresponding '.map' file for debugging. */
+    "sourceMap": true, /* Generates corresponding '.map' file for debugging. */
     // "outFile": "./",                       /* Concatenate and emit output to single file. */
-    "outDir": "./dist/",                     /* Redirect output structure to the directory. */
-    "rootDir": "./src",                      /* Specify the root directory of input files. */
+    "outDir": "./dist/", /* Redirect output structure to the directory. */
+    "rootDir": "./src", /* Specify the root directory of input files. */
     // "composite": true,                     /* Enable project compilation */
     // "removeComments": true,                /* Do not emit comments to output. */
-    "noEmit": false,                         /* Do not emit outputs. Keep false if using tsc + tsc-alias pipeline. */
+    "noEmit": false, /* Do not emit outputs. Keep false if using tsc + tsc-alias pipeline. */
     // "importHelpers": true,                 /* Import emit helpers from 'tslib'. */
     // "downlevelIteration": true,            /* Provide full support for iterables when targeting older ES versions. */
     // "isolatedModules": true,               /* Transpile each file as a separate module (required for tsx). */
-
     /* Strict Type-Checking Options */
-    "strict": true,                          /* Enable all strict type-checking options. */
+    "strict": true, /* Enable all strict type-checking options. */
     // "noImplicitAny": true,                 /* Raise error on expressions and declarations with an implied 'any' type. */
     // "strictNullChecks": true,              /* Enable strict null checks. */
     // "strictFunctionTypes": true,           /* Enable strict checking of function types. */
@@ -31,46 +30,50 @@
     // "strictPropertyInitialization": true,  /* Enable strict checking of property initialization in classes. */
     // "noImplicitThis": true,                /* Raise error on 'this' expressions with an implied 'any' type. */
     // "alwaysStrict": true,                  /* Parse in strict mode and emit "use strict" for each source file. */
-
     /* Additional Checks */
-    "noUnusedLocals": true,                  /* Report errors on unused locals. */
-    "noUnusedParameters": true,              /* Report errors on unused parameters. */
+    "noUnusedLocals": true, /* Report errors on unused locals. */
+    "noUnusedParameters": true, /* Report errors on unused parameters. */
     // "noImplicitReturns": true,             /* Report error when not all code paths in function return a value. */
     // "noFallthroughCasesInSwitch": true,    /* Report errors for fallthrough cases in switch statement. */
-
     /* Module Resolution Options */
-    "moduleResolution": "nodenext"           /* Use Node.js ESM module resolution algorithm. */,
+    "moduleResolution": "nodenext" /* Use Node.js ESM module resolution algorithm. */,
     // "baseUrl": "./",                       /* Deprecated: baseUrl is removed in TS 7.0. Avoid using. */
     "paths": {
-      "@/*": ["./src/*"]
-    },                                       /* Path alias mapping. Works with tsc-alias for runtime rewrites. */
+      "@/*": [
+        "./src/*"
+      ]
+    }, /* Path alias mapping. Works with tsc-alias for runtime rewrites. */
     "rootDirs": [
       "./src"
-    ],                                       /* List of root folders representing the structure of the project at runtime. */
+    ], /* List of root folders representing the structure of the project at runtime. */
     // "typeRoots": [],                       /* List of folders to include type definitions from. */
-    "types": ["node"],                       /* Include Node.js type declarations. */
+    "types": [
+      "node"
+    ], /* Include Node.js type declarations. */
     // "allowSyntheticDefaultImports": true,  /* Allow default imports from modules with no default export. */
-    "esModuleInterop": true,                 /* Enables CommonJS <-> ESModule interop. Implies 'allowSyntheticDefaultImports'. */
+    "esModuleInterop": true, /* Enables CommonJS <-> ESModule interop. Implies 'allowSyntheticDefaultImports'. */
     // "preserveSymlinks": true,              /* Do not resolve the real path of symlinks. */
-
     /* Source Map Options */
     // "sourceRoot": "",                      /* Location where debugger should locate TypeScript files. */
     // "mapRoot": "",                         /* Location where debugger should locate map files. */
     // "inlineSourceMap": true,               /* Emit a single file with source maps embedded. */
     // "inlineSources": true,                 /* Emit the source alongside the sourcemaps within a single file. */
-
     /* Experimental Options */
     // "experimentalDecorators": true,        /* Enables experimental support for ES7 decorators. */
     // "emitDecoratorMetadata": true,         /* Enables experimental support for emitting type metadata for decorators. */
-
     /* Compatibility & Quality-of-life Options */
-    "skipLibCheck": true,                    /* Skip type checking of declaration files. */
-    "forceConsistentCasingInFileNames": true,/* Ensure file name casing consistency across OSes. */
-    "resolveJsonModule": true,               /* Allow importing .json files as modules. */
-    "verbatimModuleSyntax": true,            /* Preserve import/export syntax for cleaner ESM output. */
+    "skipLibCheck": true, /* Skip type checking of declaration files. */
+    "forceConsistentCasingInFileNames": true, /* Ensure file name casing consistency across OSes. */
+    "resolveJsonModule": true, /* Allow importing .json files as modules. */
+    "verbatimModuleSyntax": true, /* Preserve import/export syntax for cleaner ESM output. */
     // "ignoreDeprecations": "6.0"              /* Silence TS6 baseUrl deprecation warning. */
-
   },
-  "include": ["src"],
-  "exclude": ["node_modules", "dist", "eslint.config.*"]
+  "include": [
+    "src"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "eslint.config.*"
+  ]
 }

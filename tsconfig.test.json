@@ -1,0 +1,16 @@
+// tsconfig.test.json
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": ".", // allow both src/ and tests/
+    "types": [
+      "node",
+      "vitest/globals"
+    ] // vitest typings (describe/it/expect)
+  },
+  "include": [
+    "src",
+    "tests"
+  ]
+}
