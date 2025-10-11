@@ -290,5 +290,5 @@ See [docs/dev-notes/unused-interfaces.md](./docs/dev-notes/unused-interfaces.md)
 
 ---
 
-**© 2025 Jay / Fienna Liang**
-Licensed under **Apache-2.0**
+📜 Licensed under the [Apache 2.0 License](./LICENSE)
+© 2025 Jay / Fienna Liang (<roackb2@gmail.com>)
