@@ -1,16 +1,16 @@
 import type {
   BudgetTracker,
+  FailureClassifier,
   Policy,
   Probe,
   StrategySelector,
   TerminationPolicy,
-  FailureClassifier,
 } from './interfaces'
 import type { FailureType } from './types'
 
-export { ProportionalLadder } from './ladder/proportional'
-export { DeltaScoreEvaluator } from './evaluators/delta-score'
 export { MultiBudget } from './budget/multi'
+export { DeltaScoreEvaluator } from './evaluators/delta-score'
+export { ProportionalLadder } from './ladder/proportional'
 
 /** Tracks a finite total budget. Decrements each time `record()` is called. */
 export class SimpleBudgetTracker implements BudgetTracker {

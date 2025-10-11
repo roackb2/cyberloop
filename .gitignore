@@ -11,3 +11,6 @@ dist
 # Environment files
 .env
 !.env.example
+
+# OS specific files
+.DS_Store
