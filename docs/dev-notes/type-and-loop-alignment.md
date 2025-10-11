@@ -255,4 +255,4 @@ After alignment:
 
 ---
 
-**© 2025 Fienna Liang — CyberLoop / AICL Reference Implementation**
+**© 2025 Jay / Fienna Liang (<roackb2@gmail.com>) — CyberLoop / AICL Reference Implementation**

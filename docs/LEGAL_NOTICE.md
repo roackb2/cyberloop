@@ -1,8 +1,11 @@
 # 🧾 Legal & Ethical Declaration
 
 **Project:** CyberLoop — Reference Implementation of AICL (Artificial Intelligence Control Loop)
-**Author:** Jay / Fienna Liang
+**Author:** Jay / Fienna Liang (<roackb2@gmail.com>)
 **Date:** 2025
+
+> This document supplements the LICENSE and NOTICE files under the Apache 2.0 License.
+> In case of any ambiguity, the LICENSE file shall take precedence.
 
 ---
 
