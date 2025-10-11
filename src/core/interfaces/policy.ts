@@ -3,6 +3,11 @@ import type { Ladder } from './ladder'
 
 /**
  * Policy decides the next action and can adapt from feedback & ladder signals.
+ * 
+ * NOTE: Currently not used directly in Inner/Outer Loop architecture.
+ * Only ProbePolicy (which extends this) is used.
+ * Kept for future scenarios requiring multiple policy types (e.g., bug localization, triaging).
+ * See docs/implementation/unused-interfaces.md for details.
  */
 export interface Policy<S = State, A = Action, F = Feedback> {
   id: string
