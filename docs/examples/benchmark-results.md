@@ -1,5 +1,29 @@
 # Benchmark Results: Inner/Outer Loop vs Baseline
 
+> **⚠️ Note on Benchmark Suitability**
+> 
+> This GitHub repository search benchmark primarily **validates that the framework works** (runnable, converges systematically, bounded exploration). However, it's **not the ideal scenario to demonstrate the framework's value** because:
+> 
+> **The search space is not truly unknown:**
+> - LLMs are trained on public GitHub repositories and likely already know popular solutions
+> - Tool calls are mainly for **verification**, not exploration
+> - The agent isn't discovering new information, just confirming existing knowledge
+> - No genuine exploration of unknown space
+> 
+> **The framework excels when:**
+> - The search space is **private or post-training** (unknown to the LLM)
+> - Systematic exploration is needed to **discover** rather than verify
+> - The agent must navigate **truly unfamiliar territory**
+> 
+> **Better benchmark scenarios:**
+> - **Private Knowledge Retrieval** (Notion/Confluence) - Unknown to LLM, requires real exploration
+> - **Code Bug Localization** - Private codebases, multi-step investigation
+> - **Multi-File Refactoring** - Project-specific patterns, dependency discovery
+> 
+> See [docs/use-cases.md](../use-cases.md) for detailed comparisons.
+
+---
+
 **Query**: "node graceful shutdown"  
 **Date**: 2025-10-11  
 **Architecture**: Inner/Outer Loop with Deterministic Policy + LLM Planner
