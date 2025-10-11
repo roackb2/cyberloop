@@ -71,6 +71,7 @@ The GitHub demo prints per-step logs (action, score, ladder level, remaining bud
 **[🎯 GitHub Agent Demo](./docs/examples/github-agent-demo.md)** - Complete walkthrough with actual output
 
 **What AICL provides:**
+
 - ✅ Bounded exploration (budget tracking, stagnation detection)
 - ✅ Probe-based failure detection (gradient signals)
 - ✅ Reproducible control structure
@@ -89,7 +90,7 @@ The GitHub demo prints per-step logs (action, score, ladder level, remaining bud
 │   └── utils/           # Shared interfaces and helpers
 ├── docs/
 │   ├── examples/        # Example walkthroughs with output
-│   └── whitepaper/      # AICL Whitepaper v0.2
+│   └── whitepaper/      # AICL Whitepaper
 └── README.md
 ```
 
@@ -97,7 +98,7 @@ The GitHub demo prints per-step logs (action, score, ladder level, remaining bud
 
 ## References
 
-- [📜 AICL Whitepaper v0.2](./docs/whitepaper/AICL_Whitepaper_v0.2.md)
+- [📜 AICL Whitepaper](./docs/whitepaper/AICL.md)
 - [🎯 Vision Note: Controlled Sustainable Intelligence](https://github.com/roackb2/cyber-loop/discussions)
 
 ---
