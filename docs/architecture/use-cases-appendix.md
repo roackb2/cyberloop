@@ -332,7 +332,7 @@ Outer Loop (LLM):
 ### Next steps
 
 1. Review the [GitHub search example](./examples/github-agent-demo.md) to understand the architecture
-2. Check the [benchmark results](./examples/benchmark-results.md) for performance characteristics
+2. Check the [baseline comparison](./examples/baseline-comparison.md) for performance characteristics
 3. Implement your domain-specific:
    - `Environment` (how to interact with your search space)
    - `ProbePolicy` (how to narrow/broaden systematically)

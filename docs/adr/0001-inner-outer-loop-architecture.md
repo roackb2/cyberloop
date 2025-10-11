@@ -368,7 +368,7 @@ See [docs/use-cases.md](../use-cases.md) for detailed scenarios.
 
 - [Use Cases & Applications](../use-cases.md) - When to use this framework
 - [Unused Interfaces](../implementation/unused-interfaces.md) - Why we keep certain interfaces
-- [Benchmark Results](../examples/benchmark-results.md) - Performance comparison
+- [Baseline Comparison](../examples/baseline-comparison.md) - Performance comparison
 - [AICL Whitepaper](../whitepaper/aicl.md) - Original design inspiration
 
 ## References
