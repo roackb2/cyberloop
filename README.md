@@ -289,7 +289,7 @@ These interfaces support advanced scenarios but are not required for basic usage
 
 ### Whitepaper & Examples
 
-- [📜 AICL Whitepaper](./docs/whitepaper/aicl.md) - Theoretical foundation
+- [📜 AICL Whitepaper](./docs/whitepaper/AICL.md) - Theoretical foundation
 - [🎯 GitHub Agent Demo](./docs/examples/github-agent-demo.md) - Complete walkthrough
 - [📊 Baseline Comparison](./docs/examples/baseline-comparison.md) - When AICL helps vs baseline
 
