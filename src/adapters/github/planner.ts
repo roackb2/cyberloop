@@ -140,7 +140,7 @@ Return JSON with new search filters or null if you can't think of alternatives.`
     
     try {
       const parsed = JSON.parse(result.finalOutput ?? 'null') as Partial<SearchFilters> | null
-      if (!parsed || !parsed.keywords) return null
+      if (!parsed?.keywords) return null
 
       const filters: SearchFilters = {
         keywords: parsed.keywords,
