@@ -2,6 +2,7 @@ import type { Ladder, ProbePolicy } from '@/core/interfaces'
 
 import type { GhAction, GhState } from './env'
 import type { SearchFilters } from './search-tool'
+import { logger } from './telemetry'
 
 /**
  * Deterministic search policy that adjusts search dimensions without agent calls.
@@ -47,7 +48,7 @@ export class DeterministicSearchPolicy implements ProbePolicy<GhState, GhAction,
 
   /**
    * Check if current state is stable (good enough to stop exploration)
-   * 
+   *
    * Stable range: 10-30 hits
    * - Too few (<10): Not enough results to be useful
    * - Good range (10-30): Perfect for detailed exploration
@@ -85,31 +86,31 @@ export class DeterministicSearchPolicy implements ProbePolicy<GhState, GhAction,
 
   private narrow(filters: SearchFilters): GhAction {
     this.narrowAttempts++
-    
+
     // Strategy 1: Increase minStars threshold to filter for quality
     // Use smaller increments on subsequent attempts to avoid overshooting
     if (!filters.minStars || filters.minStars < 100) {
       const increment = this.narrowAttempts === 1 ? 50 : 20 // Smaller increment after first attempt
       const newMinStars = (filters.minStars ?? 0) + increment
-      console.log(`[Policy] Narrowing (attempt ${this.narrowAttempts}): increasing minStars to ${newMinStars}`)
+      logger.info(`[Policy] Narrowing (attempt ${this.narrowAttempts}): increasing minStars to ${newMinStars}`)
       return { type: 'narrow', payload: { exact: [`stars:>${newMinStars}`] } }
     }
 
     // Strategy 2: If minStars is already high, we can't narrow further with current tools
-    console.log('[Policy] Cannot narrow further (minStars already at 100+)')
+    logger.info('[Policy] Cannot narrow further (minStars already at 100+)')
     return { type: 'rephrase', payload: {} }
   }
 
   private broaden(filters: SearchFilters): GhAction {
     // Strategy 1: If we have minStars filter, remove it first
     if (filters.minStars && filters.minStars > 0) {
-      console.log('[Policy] Broadening: removing minStars filter')
+      logger.info('[Policy] Broadening: removing minStars filter')
       return { type: 'broaden', payload: { synonyms: ['stars:>0'] } } // Signal to remove minStars
     }
 
     // Strategy 2: Remove last keyword (keep at least 1)
     if (filters.keywords.length > 1) {
-      console.log('[Policy] Broadening: removing last keyword')
+      logger.info('[Policy] Broadening: removing last keyword')
       return { type: 'broaden', payload: {} }
     }
 
@@ -117,13 +118,13 @@ export class DeterministicSearchPolicy implements ProbePolicy<GhState, GhAction,
     if (!filters.orKeywords || filters.orKeywords.length === 0) {
       const alternatives = this.generateAlternatives(filters.keywords[0])
       if (alternatives.length > 0) {
-        console.log('[Policy] Broadening: adding OR keywords')
+        logger.info('[Policy] Broadening: adding OR keywords')
         return { type: 'broaden', payload: { synonyms: alternatives } }
       }
     }
 
     // Can't broaden further - no-op
-    console.log('[Policy] Cannot broaden further')
+    logger.info('[Policy] Cannot broaden further')
     return { type: 'rephrase', payload: {} }
   }
 

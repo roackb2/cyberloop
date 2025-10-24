@@ -1,6 +1,7 @@
 import type { Environment } from '@/core/interfaces'
 
 import type { GitHubSearchApi, SearchFilters } from './search-tool'
+import { logger } from './telemetry'
 
 export interface GhState {
   query: string // Legacy - for display
@@ -52,20 +53,20 @@ export const GitHubSearchEnv = (
     const response = await api.search(filters, { perPage: 10 })
     const history = (current.history ?? []).concat({ filters, hits: response.hits }).slice(-10)
     // Preserve probe history across state transitions
-    current = { 
+    current = {
       query: filters.keywords.join(' '),
       filters,
-      ...response, 
-      history, 
-      probes: current.probes ?? [] 
+      ...response,
+      history,
+      probes: current.probes ?? []
     }
     if (log) {
-      console.log('[GitHubSearchEnv] fetch', {
+      logger.info({
         query: current.query,
         hits: current.hits,
         entropy: current.entropy,
         probes: current.probes?.length ?? 0,
-      })
+      }, '[GitHubSearchEnv] fetch')
     }
     initialized = true
     return current
@@ -81,7 +82,7 @@ export const GitHubSearchEnv = (
     apply: async (action) => {
       const nextFilters = mutateFilters(current.filters, action)
       if (log) {
-        console.log('[GitHubSearchEnv] apply', { action, nextFilters })
+        logger.info({ action, nextFilters }, '[GitHubSearchEnv] apply')
       }
       return fetch(nextFilters)
     },

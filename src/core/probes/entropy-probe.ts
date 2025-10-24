@@ -13,6 +13,7 @@ export interface EntropyProbeOpts {
 export const EntropyProbe = <S>(
   getEntropy: (state: S) => number,
   opts: EntropyProbeOpts = {},
+  inspector?: (state: S) => Record<string, unknown>,
 ): Probe<S> => {
   const max = opts.max ?? 0.85
   const min = opts.min ?? 0
@@ -36,5 +37,6 @@ export const EntropyProbe = <S>(
       }
       return { pass: true }
     },
+    inspectState: inspector,
   }
 }

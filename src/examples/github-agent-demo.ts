@@ -7,6 +7,7 @@ import { GitHubPlanner } from '@/adapters/github/planner'
 import { hasHitsProbe } from '@/adapters/github/probes'
 import type { SearchFilters } from '@/adapters/github/search-tool'
 import { createGitHubSearchApi } from '@/adapters/github/search-tool'
+import { logger } from '@/adapters/github/telemetry'
 import { createControlBudget } from '@/core/budget/control-budget'
 import { DeltaScoreEvaluator, ProportionalLadder } from '@/core/defaults'
 import { Orchestrator } from '@/core/orchestrator'
@@ -18,8 +19,8 @@ async function main() {
   const cliQuery = process.argv.slice(2).join(' ')
   const userQuery = cliQuery || (process.env.GITHUB_AGENT_QUERY ?? 'node graceful shutdown')
 
-  console.log(`\n🔍 GitHub Search with AICL (Inner/Outer Loop)`)
-  console.log(`Query: "${userQuery}"\n`)
+  logger.info(`\n🔍 GitHub Search with AICL (Inner/Outer Loop)`)
+  logger.info(`Query: "${userQuery}"\n`)
 
   // Create components
   const initialFilters: SearchFilters = { keywords: [userQuery] }
@@ -44,20 +45,21 @@ async function main() {
     ladder,
     budget,
     maxInnerSteps: 20,
+    logger,
   })
 
   // Run!
   const result = await orchestrator.run(userQuery)
 
-  console.log('\n' + '='.repeat(80))
-  console.log('📊 Results:')
-  console.log('='.repeat(80))
-  console.log(result.output)
-  console.log('\n' + '='.repeat(80))
-  console.log(`⏱️  Exploration Attempts: ${result.explorationAttempts}`)
-  console.log(`🔄 Inner Loop Steps: ${result.innerLoopSteps}`)
-  console.log(`🤖 Outer Loop Calls: ${result.outerLoopCalls}`)
-  console.log('='.repeat(80))
+  logger.info('\n' + '='.repeat(80))
+  logger.info('📊 Results:')
+  logger.info('='.repeat(80))
+  logger.info(result.output)
+  logger.info('\n' + '='.repeat(80))
+  logger.info(`⏱️  Exploration Attempts: ${result.explorationAttempts}`)
+  logger.info(`🔄 Inner Loop Steps: ${result.innerLoopSteps}`)
+  logger.info(`🤖 Outer Loop Calls: ${result.outerLoopCalls}`)
+  logger.info('='.repeat(80))
 }
 
 function validateEnv() {

@@ -4,17 +4,18 @@ import type { Planner } from '@/core/interfaces'
 
 import type { GhState } from './env'
 import type { GitHubSearchApi, SearchFilters } from './search-tool'
+import { logger } from './telemetry'
 
 /**
  * GitHub Planner - Strategic planning using LLM
- * 
+ *
  * Responsibilities:
  * - plan(): Convert user query into initial SearchFilters
  * - evaluate(): Summarize found repositories
  * - replan(): Suggest alternative strategy when exploration fails
  */
 export class GitHubPlanner implements Planner<GhState> {
-  constructor(private readonly api: GitHubSearchApi) {}
+  constructor(private readonly api: GitHubSearchApi) { }
 
   /**
    * Convert user's natural language query into initial search filters
@@ -50,14 +51,14 @@ Be conservative - start with broad search that can be narrowed.`,
     // If LLM didn't provide keywords, split user input into words
     // Start with just the full phrase for broadest search
     const defaultKeywords = [userInput]
-    
+
     const filters: SearchFilters = {
       keywords: parsed.keywords ?? defaultKeywords,
       language: parsed.language,
       minStars: parsed.minStars,
     }
 
-    console.log(`[Planner] Created initial filters: ${JSON.stringify(filters)}`)
+    logger.info(`[Planner] Created initial filters: ${JSON.stringify(filters)}`)
 
     return {
       query: filters.keywords.join(' '),
@@ -73,7 +74,7 @@ Be conservative - start with broad search that can be narrowed.`,
    * Evaluate exploration results and create summary
    */
   async evaluate(state: GhState, history: GhState[]): Promise<string> {
-    console.log(`[Planner] Evaluating results with ${state.hits} hits`)
+    logger.info(`[Planner] Evaluating results with ${state.hits} hits`)
     // Fetch fresh data from final state
     const results = await this.api.search(state.filters, { perPage: 10 })
 
@@ -113,7 +114,7 @@ Format with markdown. Be specific and actionable.`,
    * Suggest alternative search strategy when exploration fails
    */
   async replan(state: GhState, history: GhState[]): Promise<GhState | null> {
-    console.log(`[Planner] Replanning after ${history.length} failed attempts`)
+    logger.info(`[Planner] Replanning after ${history.length} failed attempts`)
     const agent = new Agent({
       name: 'GitHubReplannerAgent',
       instructions: `You are a GitHub search strategist. The current search strategy failed to find good results.
@@ -137,7 +138,7 @@ Return JSON with new search filters or null if you can't think of alternatives.`
     }
 
     const result = await run(agent, JSON.stringify(context, null, 2))
-    
+
     try {
       const parsed = JSON.parse(result.finalOutput ?? 'null') as Partial<SearchFilters> | null
       if (!parsed?.keywords) return null

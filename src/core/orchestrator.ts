@@ -3,26 +3,27 @@ import type {
   Environment,
   Evaluator,
   Ladder,
+  Logger,
   Planner,
   Probe,
   ProbePolicy,
 } from './interfaces'
-import type { Action, Feedback, ProbeResult, State } from './types'
+import type { Action, AggregateProbeResult, Feedback, ProbeData, ProbeResult, State } from './types'
 
 /**
  * ExplorationResult - Result of inner loop exploration
  */
-export interface ExplorationResult<S> {
+export interface ExplorationResult<S, D, R extends ProbeResult<D>> {
   status: 'stable' | 'budget-exhausted'
   state: S
   history: S[]
-  probeResults: ProbeResult[]
+  probeResults: AggregateProbeResult<D, R>[]
 }
 
 /**
  * StepLog - Log entry for each inner loop iteration
  */
-export interface StepLog<S, A, F> {
+export interface StepLog<S, A, F, D, R extends ProbeResult<D>> {
   t: number
   state: S
   action?: A
@@ -30,42 +31,43 @@ export interface StepLog<S, A, F> {
   feedback?: F
   ladderLevel: number
   innerBudgetRemaining: number
-  probeResult?: ProbeResult
+  probeResult?: AggregateProbeResult<D, R>
   isStable: boolean
 }
 
 /**
  * OrchestratorResult - Final result from orchestrator
  */
-export interface OrchestratorResult<S, A, F> {
+export interface OrchestratorResult<S, A, F, D, R extends ProbeResult<D>> {
   output: string
   explorationAttempts: number
   innerLoopSteps: number
   outerLoopCalls: number
-  logs: StepLog<S, A, F>[]
+  logs: StepLog<S, A, F, D, R>[]
 }
 
 /**
  * OrchestratorOpts - Configuration for orchestrator
  */
-export interface OrchestratorOpts<S, A, F> {
+export interface OrchestratorOpts<S, A, F, D, R extends ProbeResult<D>> {
   env: Environment<S, A>
   probePolicy: ProbePolicy<S, A, F>
   planner: Planner<S>
-  probes: Probe<S>[]
+  probes: Probe<S, D, R>[]
   evaluator: Evaluator<S, F>
   ladder: Ladder<F>
   budget: ControlBudget
   maxInnerSteps?: number
+  logger?: Logger
 }
 
 /**
  * Orchestrator - Hierarchical control loop with inner/outer loops
- * 
+ *
  * Architecture:
  * - Inner loop: Fast, reflexive control using ProbePolicy
  * - Outer loop: Slow, strategic control using Planner
- * 
+ *
  * Flow:
  * 1. Planner creates initial plan from user input (outer loop call #1)
  * 2. Inner loop explores deterministically until stable or budget exhausted
@@ -73,19 +75,20 @@ export interface OrchestratorOpts<S, A, F> {
  * 4. If budget exhausted: Planner replans (outer loop call #3), goto step 2
  * 5. Return final output
  */
-export class Orchestrator<S = State, A = Action, F = Feedback> {
+export class Orchestrator<S = State, A = Action, F = Feedback, D = ProbeData, R extends ProbeResult<D> = ProbeResult<D>> {
   private readonly env: Environment<S, A>
   private readonly probePolicy: ProbePolicy<S, A, F>
   private readonly planner: Planner<S>
-  private readonly probes: Probe<S>[]
+  private readonly probes: Probe<S, D, R>[]
   private readonly evaluator: Evaluator<S, F>
   private readonly ladder: Ladder<F>
   private readonly budget: ControlBudget
   private readonly maxInnerSteps: number
+  private readonly logger: Logger | undefined
 
-  public logs: StepLog<S, A, F>[] = []
+  public logs: StepLog<S, A, F, D, R>[] = []
 
-  constructor(opts: OrchestratorOpts<S, A, F>) {
+  constructor(opts: OrchestratorOpts<S, A, F, D, R>) {
     this.env = opts.env
     this.probePolicy = opts.probePolicy
     this.planner = opts.planner
@@ -94,30 +97,31 @@ export class Orchestrator<S = State, A = Action, F = Feedback> {
     this.ladder = opts.ladder
     this.budget = opts.budget
     this.maxInnerSteps = opts.maxInnerSteps ?? 50
+    this.logger = opts.logger
   }
 
   /**
    * Run the orchestrator with user input
-   * 
+   *
    * @param userInput - User's natural language input
    * @returns Final output and statistics
    */
-  async run(userInput: string): Promise<OrchestratorResult<S, A, F>> {
+  async run(userInput: string): Promise<OrchestratorResult<S, A, F, D, R>> {
     this.logs = []
     let explorationAttempts = 0
     let innerLoopSteps = 0
     let outerLoopCalls = 0
 
     // Outer loop call #1: Initial planning
-    console.log('\n[Outer Loop] Calling planner.plan()...')
+    this.logger?.info('\n[Outer Loop] Calling planner.plan()...')
     let state = await this.planner.plan(userInput)
-    console.log(`[Outer Loop] Initial state: ${JSON.stringify(state)}`)
+    this.logger?.info(state, `[Outer Loop] Initial state`)
     outerLoopCalls++
     this.budget.outerLoop.record(2.0) // Cost of LLM call
 
     // Initialize probe policy with initial state
     this.probePolicy.initialize(state)
-    console.log('[Outer Loop] ProbePolicy initialized\n')
+    this.logger?.info('[Outer Loop] ProbePolicy initialized\n')
 
     // Main control loop
     while (!this.budget.shouldStop()) {
@@ -129,7 +133,7 @@ export class Orchestrator<S = State, A = Action, F = Feedback> {
 
       if (result.status === 'stable') {
         // Success! Outer loop call #2: Evaluate results
-        console.log('\n[Outer Loop] Stable state found! Calling planner.evaluate()...')
+        this.logger?.info('\n[Outer Loop] Stable state found! Calling planner.evaluate()...')
         const output = await this.planner.evaluate(result.state, result.history)
         outerLoopCalls++
         this.budget.outerLoop.record(2.0)
@@ -146,7 +150,7 @@ export class Orchestrator<S = State, A = Action, F = Feedback> {
       if (result.status === 'budget-exhausted' && !this.budget.outerLoop.shouldStop()) {
         // Inner loop exhausted, try replanning
         // Outer loop call #3: Replan
-        console.log('\n[Outer Loop] Inner loop exhausted. Calling planner.replan()...')
+        this.logger?.info('\n[Outer Loop] Inner loop exhausted. Calling planner.replan()...')
         const newState = await this.planner.replan(result.state, result.history)
         outerLoopCalls++
         this.budget.outerLoop.record(2.0)
@@ -176,14 +180,14 @@ export class Orchestrator<S = State, A = Action, F = Feedback> {
 
   /**
    * Inner loop: Fast, deterministic exploration
-   * 
+   *
    * Uses ProbePolicy to make quick adjustments based on probe signals
    * until state is stable or inner loop budget exhausted.
    */
-  private async exploreInnerLoop(initialState: S): Promise<ExplorationResult<S>> {
+  private async exploreInnerLoop(initialState: S): Promise<ExplorationResult<S, D, R>> {
     let state = initialState
     const history: S[] = [state]
-    const probeResults: ProbeResult[] = []
+    const probeResults: AggregateProbeResult<D, R>[] = []
 
     for (let t = 0; t < this.maxInnerSteps && !this.budget.innerLoop.shouldStop(); t++) {
       // Run probes to get gradient signals
@@ -193,7 +197,7 @@ export class Orchestrator<S = State, A = Action, F = Feedback> {
 
       // Check if state is stable (good enough)
       const isStable = this.probePolicy.isStable(state)
-      
+
       // Log this step
       this.logs.push({
         t,
@@ -205,7 +209,8 @@ export class Orchestrator<S = State, A = Action, F = Feedback> {
       })
 
       // Debug logging
-      console.log(`[Inner Loop t=${t}] state=${JSON.stringify(state)}, stable=${isStable}, budget=${this.budget.innerLoop.remaining().toFixed(2)}`)
+      const stateInspection = this.probes[0].inspectState?.(state) ?? JSON.stringify(state)
+      this.logger?.info(stateInspection, `[Inner Loop t=${t}], stable=${isStable}, budget=${this.budget.innerLoop.remaining().toFixed(2)}`)
 
       if (isStable) {
         return {
@@ -218,12 +223,12 @@ export class Orchestrator<S = State, A = Action, F = Feedback> {
 
       // Probe policy decides next action (deterministic, no LLM!)
       const action = await this.probePolicy.decide(state, this.ladder)
-      console.log(`[Inner Loop t=${t}] Action: ${JSON.stringify(action)}`)
+      this.logger?.info(`[Inner Loop t=${t}] Action: ${JSON.stringify(action)}`)
       this.budget.innerLoop.record(0.1) // Cheap decision cost
 
       // Apply action to environment
       const nextState = await this.env.apply(action)
-      
+
       // Evaluate and update ladder
       const feedback = await this.evaluator.evaluate(state, nextState)
       this.ladder.update(feedback)
@@ -254,7 +259,7 @@ export class Orchestrator<S = State, A = Action, F = Feedback> {
   /**
    * Run all probes and combine results
    */
-  private async runProbes(state: S): Promise<ProbeResult> {
+  private async runProbes(state: S): Promise<AggregateProbeResult<D, R>> {
     const results = await Promise.all(
       this.probes.map(probe => Promise.resolve(probe.test(state)))
     )
@@ -266,7 +271,7 @@ export class Orchestrator<S = State, A = Action, F = Feedback> {
     return {
       pass: allPass,
       reason: reasons.join(', ') || undefined,
-      data: results,
+      results,
     }
   }
 }

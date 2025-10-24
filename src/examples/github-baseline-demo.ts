@@ -2,7 +2,11 @@ import 'dotenv/config'
 
 import { Agent, run } from '@openai/agents'
 
-import { createGitHubSearchApi, createGitHubSearchTool } from '@/adapters/github/search-tool.js'
+import {
+  createGitHubSearchApi,
+  createGitHubSearchTool,
+  logger,
+} from '@/adapters/github'
 
 /**
  * Baseline: Agent with NO control loop
@@ -14,14 +18,14 @@ import { createGitHubSearchApi, createGitHubSearchTool } from '@/adapters/github
  */
 async function main() {
   validateEnv()
-  
+
   const searchApi = createGitHubSearchApi()
   const cliQuery = process.argv.slice(2).join(' ')
   const seed = cliQuery || (process.env.GITHUB_AGENT_QUERY ?? 'node graceful shutdown')
-  
-  console.log(`\n🔍 Baseline Agent (No Control Loop)`)
-  console.log(`Query: "${seed}"\n`)
-  
+
+  logger.info(`\n🔍 Baseline Agent (No Control Loop)`)
+  logger.info(`Query: "${seed}"\n`)
+
   const agent = new Agent({
     name: 'BaselineGitHubAgent',
     instructions: `You are a GitHub repository search assistant with multi-dimensional search capabilities.
@@ -30,7 +34,7 @@ Your task: Find the best repositories for the user's query: "${seed}"
 
 You have access to github_search with these dimensions:
 - keywords: Main search terms (AND combined)
-- or_keywords: Alternative terms (OR combined)  
+- or_keywords: Alternative terms (OR combined)
 - language: Programming language filter
 - min_stars/max_stars: Star count filters
 - topic: GitHub topic
@@ -51,7 +55,7 @@ After exploring, provide a summary with:
   searchApi.search = async (query, opts) => {
     toolCalls++
     const queryStr = typeof query === 'string' ? query : JSON.stringify(query)
-    console.log(`🔧 [Tool Call ${toolCalls}] Searching: "${queryStr}"`)
+    logger.info(`🔧 [Tool Call ${toolCalls}] Searching: "${queryStr}"`)
     return originalSearch(query, opts)
   }
 
@@ -59,15 +63,15 @@ After exploring, provide a summary with:
 
   const duration = ((Date.now() - startTime) / 1000).toFixed(2)
 
-  console.log('\n' + '='.repeat(80))
-  console.log('📊 Baseline Results:')
-  console.log('='.repeat(80))
-  console.log(result.finalOutput)
-  console.log('\n' + '='.repeat(80))
-  console.log(`⏱️  Duration: ${duration}s`)
-  console.log(`🔧 Tool Calls: ${toolCalls}`)
-  console.log(`💰 Estimated Cost: ${toolCalls * 2} units (no budget tracking)`)
-  console.log('='.repeat(80))
+  logger.info('\n' + '='.repeat(80))
+  logger.info('📊 Baseline Results:')
+  logger.info('='.repeat(80))
+  logger.info(result.finalOutput)
+  logger.info('\n' + '='.repeat(80))
+  logger.info(`⏱️  Duration: ${duration}s`)
+  logger.info(`🔧 Tool Calls: ${toolCalls}`)
+  logger.info(`💰 Estimated Cost: ${toolCalls * 2} units (no budget tracking)`)
+  logger.info('='.repeat(80))
 }
 
 function validateEnv(): void {

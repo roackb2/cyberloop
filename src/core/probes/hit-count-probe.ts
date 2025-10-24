@@ -14,6 +14,7 @@ export interface HitCountProbeOpts {
 export const HitCountProbe = <S>(
   getCount: (state: S) => number,
   opts: HitCountProbeOpts = {},
+  inspector?: (state: S) => Record<string, unknown>,
 ): Probe<S> => {
   const min = opts.min ?? 1
   const max = opts.max ?? Infinity
@@ -37,5 +38,6 @@ export const HitCountProbe = <S>(
       }
       return { pass: true, data: { count, min, max } }
     },
+    inspectState: inspector,
   }
 }
