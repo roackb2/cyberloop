@@ -3,7 +3,13 @@ import { EntropyProbe, HitCountProbe } from '@/core/probes'
 
 import type { GhState } from './env'
 
-const stateInspector = (state: GhState) => {
+const stateInspector = function (this: void, state: GhState): {
+  query: string
+  hits: number
+  entropy: number
+  items: string[] | undefined
+  history: { filters: string; hits: number }[] | undefined
+} {
   const { query, hits, entropy, items, history } = state
   const itemSummary = items?.map(i => i.title)
   const historySummary = history?.map(h => {
