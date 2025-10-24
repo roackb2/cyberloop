@@ -1,5 +1,8 @@
 # 🧠 CyberLoop
 
+[![PR Checks](https://github.com/roackb2/cyberloop/actions/workflows/pr-checks.yml/badge.svg)](https://github.com/roackb2/cyberloop/actions/workflows/pr-checks.yml)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](./LICENSE)
+
 ### Reference Implementation of AICL (Artificial Intelligence Control Loop)
 
 > **Status:** 🧩 *Work in Progress (early-stage research and prototyping)*
