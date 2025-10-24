@@ -58,7 +58,7 @@ Be conservative - start with broad search that can be narrowed.`,
       minStars: parsed.minStars,
     }
 
-    logger.info(`[Planner] Created initial filters: ${JSON.stringify(filters)}`)
+    logger.info({ filters }, '[Planner] Created initial filters')
 
     return {
       query: filters.keywords.join(' '),

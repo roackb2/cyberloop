@@ -68,14 +68,14 @@ jobs:
       - name: Install dependencies
         run: yarn install --frozen-lockfile
 
-      - name: Run tests
-        run: yarn test --run
+      - name: Run tests with coverage
+        run: yarn test --run --coverage
 
       - name: Upload coverage reports
         if: always()
         uses: codecov/codecov-action@v4
         with:
-          files: ./coverage/coverage-final.json
+          files: ./coverage/lcov.info
           flags: unittests
           fail_ci_if_error: false
         env:
