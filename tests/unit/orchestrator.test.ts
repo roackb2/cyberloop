@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { createControlBudget } from '@/core/budget/control-budget'
-import { ProportionalLadder } from '@/core/defaults'
 import type {
   Environment,
   Evaluator,
@@ -9,6 +8,7 @@ import type {
   Probe,
   ProbePolicy,
 } from '@/core/interfaces'
+import { ProportionalLadder } from '@/core/ladder/proportional'
 import {
   Orchestrator,
 } from '@/core/orchestrator'
@@ -77,13 +77,13 @@ describe('Orchestrator', () => {
     expect(plan).toHaveBeenCalledWith('test input')
     expect(initialize).toHaveBeenCalledWith(0)
     expect(evaluatePlan).toHaveBeenCalled()
-    
+
     // Verify inner loop
     expect(probeTest).toHaveBeenCalled()
     expect(decide).toHaveBeenCalled()
     expect(apply).toHaveBeenCalledWith(2)
     expect(isStable).toHaveBeenCalled()
-    
+
     // Verify result
     expect(result.output).toBe('Success!')
     expect(result.outerLoopCalls).toBe(2) // plan + evaluate

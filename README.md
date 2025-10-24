@@ -121,10 +121,12 @@ The demo prints per-step logs showing action, score, ladder level, and remaining
 │   │   ├── budget/      # Budget tracking implementations (ControlBudget for inner/outer loops)
 │   │   ├── evaluators/  # Evaluator implementations
 │   │   ├── ladder/      # Ladder implementations
+│   │   ├── probes/      # Built-in probes (EntropyProbe, HitCountProbe)
 │   │   └── types.ts     # Shared type definitions
 │   ├── adapters/        # Domain-specific adapters
 │   │   ├── dep-solver/  # Dependency solver example
 │   │   └── github/      # GitHub search example
+│   ├── reference/       # Reference implementations for optional meta-control
 │   ├── examples/        # Runnable demos
 │   └── types/           # Additional type definitions
 ├── docs/
@@ -258,16 +260,16 @@ interface BudgetTracker {
 }
 ```
 
-### Supporting Interfaces (Reserved for Future Use)
+### Optional Meta-Control Interfaces
 
-These interfaces are defined but not currently used in the inner/outer loop architecture. They're kept for future scenarios requiring more complex control:
+These interfaces support advanced scenarios but are not required for basic usage:
 
 - **`Policy`** - Base policy interface (extended by ProbePolicy)
-- **`StrategySelector`** - Dynamic policy selection based on failure types
-- **`FailureClassifier`** - Categorizes failures for routing decisions
+- **`StrategySelector`** - Multi-strategy routing based on failure types
+- **`FailureClassifier`** - Diagnoses complex failure modes
 - **`TerminationPolicy`** - Multi-objective stopping criteria
 
-See [docs/dev-notes/unused-interfaces.md](./docs/dev-notes/unused-interfaces.md) for details on why these are currently unused.
+**Reference implementations** are provided in `src/reference/` for learning purposes. Most applications use a single ProbePolicy and don't need these components. See the GitHub adapter for the recommended pattern.
 
 ---
 

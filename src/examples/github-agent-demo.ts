@@ -9,7 +9,8 @@ import type { SearchFilters } from '@/adapters/github/search-tool'
 import { createGitHubSearchApi } from '@/adapters/github/search-tool'
 import { logger } from '@/adapters/github/telemetry'
 import { createControlBudget } from '@/core/budget/control-budget'
-import { DeltaScoreEvaluator, ProportionalLadder } from '@/core/defaults'
+import { DeltaScoreEvaluator } from '@/core/evaluators/delta-score'
+import { ProportionalLadder } from '@/core/ladder/proportional'
 import { Orchestrator } from '@/core/orchestrator'
 
 async function main() {

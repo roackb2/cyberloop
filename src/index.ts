@@ -55,25 +55,27 @@ export type {
 } from './core/types'
 
 // ============================================================================
-// Default Implementations
+// Production Implementations
 // ============================================================================
 
+export { MultiBudget } from './core/budget/multi'
+export { DeltaScoreEvaluator } from './core/evaluators/delta-score'
+export { ProportionalLadder } from './core/ladder/proportional'
+
+// ============================================================================
+// Reference Implementations (Optional Meta-Control)
+// ============================================================================
+// Educational examples for advanced scenarios. Most applications don't need these.
+// See src/reference/ for details and src/adapters/github for recommended patterns.
+
 export {
-  // Utilities
   CheapPassProbe,
-  // Evaluators
-  DeltaScoreEvaluator,
-  // Budget trackers
-  MultiBudget,
-  // Ladder implementations
-  ProportionalLadder,
-  // Strategy and control
   ReasonFailureClassifier,
   RuleBasedStrategySelector,
   SimpleBudgetTracker,
   StagnationTerminationPolicy,
   ThresholdEvaluator,
-} from './core/defaults'
+} from './reference'
 
 // ============================================================================
 // Built-in Probes

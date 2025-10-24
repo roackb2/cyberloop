@@ -1,3 +1,35 @@
+/**
+ * Reference Implementations for Optional Meta-Control Components
+ *
+ * This module provides example implementations of optional AICL interfaces.
+ * These are educational examples showing how to implement advanced meta-control
+ * components like StrategySelector, FailureClassifier, and TerminationPolicy.
+ *
+ * ## When to use these
+ *
+ * Most applications DON'T need these components. They're for advanced scenarios:
+ * - Multi-strategy routing across different domains
+ * - Complex failure diagnosis and recovery
+ * - Multi-objective termination criteria
+ *
+ * ## Recommended approach
+ *
+ * Instead of using these generic implementations, create domain-specific components
+ * tailored to your use case. See `src/adapters/github` for the recommended pattern:
+ * - Custom ProbePolicy (DeterministicSearchPolicy)
+ * - Domain-specific probes (hasHitsProbe, dropGuardProbe, entropyGuardProbe)
+ * - Simple evaluators and ladders from core/
+ *
+ * ## What's in this module
+ *
+ * - SimpleBudgetTracker - Basic budget tracking (use ControlBudget instead)
+ * - RuleBasedStrategySelector - Multi-strategy routing example
+ * - CheapPassProbe - No-op probe for testing
+ * - ThresholdEvaluator - Placeholder evaluator for testing
+ * - StagnationTerminationPolicy - Multi-objective stopping criteria
+ * - ReasonFailureClassifier - Rule-based failure diagnosis
+ */
+
 import type {
   BudgetTracker,
   FailureClassifier,
@@ -5,14 +37,14 @@ import type {
   Probe,
   StrategySelector,
   TerminationPolicy,
-} from './interfaces'
-import type { FailureType } from './types'
+} from '../core/interfaces'
+import type { FailureType } from '../core/types'
 
-export { MultiBudget } from './budget/multi'
-export { DeltaScoreEvaluator } from './evaluators/delta-score'
-export { ProportionalLadder } from './ladder/proportional'
-
-/** Tracks a finite total budget. Decrements each time `record()` is called. */
+/**
+ * Reference implementation: Simple budget tracker.
+ * Tracks a finite total budget. Decrements each time `record()` is called.
+ * Note: Production code should use ControlBudget for hierarchical inner/outer loop tracking.
+ */
 export class SimpleBudgetTracker implements BudgetTracker {
   private current: number
   constructor(private total: number) { this.current = total }
@@ -27,7 +59,12 @@ export class SimpleBudgetTracker implements BudgetTracker {
   reset(v?: number): void { this.current = v ?? this.total }
 }
 
-/** Simple rule-based selector that chooses the cheapest probe/policy pair. */
+/**
+ * Reference implementation: Rule-based strategy selector.
+ * Optional meta-control component for multi-strategy routing.
+ * Chooses the cheapest probe/policy pair based on failure type and ladder level.
+ * Most applications use a single policy and don't need this.
+ */
 export class RuleBasedStrategySelector<S, A> implements StrategySelector<S, A> {
   select(input: {
     failure: FailureType
@@ -61,14 +98,20 @@ export class RuleBasedStrategySelector<S, A> implements StrategySelector<S, A> {
   }
 }
 
-/** Probe that always passes (for quick experiments). */
+/**
+ * Reference implementation: No-op probe for testing.
+ * Always passes with zero cost. Useful for quick experiments and testing.
+ */
 export const CheapPassProbe = <S>(id = 'cheap-pass'): Probe<S> => ({
   id,
   capabilities: () => ({ cost: 0 }),
   test: () => ({ pass: true }),
 })
 
-/** Evaluator that returns a constant score; placeholder for real scoring logic. */
+/**
+ * Reference implementation: Constant-score evaluator.
+ * Placeholder for testing. Production code should implement domain-specific evaluation logic.
+ */
 export class ThresholdEvaluator<S> {
   constructor(private threshold = 0) { }
   evaluate(_prev: S, _next: S): number {
@@ -76,7 +119,12 @@ export class ThresholdEvaluator<S> {
   }
 }
 
-/** Stops the loop when budget is gone or improvements stall for too long. */
+/**
+ * Reference implementation: Stagnation-based termination policy.
+ * Optional meta-control component for complex stopping criteria.
+ * Stops when budget exhausted or improvements stall.
+ * Most applications use ControlBudget's built-in termination.
+ */
 export class StagnationTerminationPolicy implements TerminationPolicy {
   constructor(private opts: { maxStagnantSteps?: number; minFeedback?: number } = {}) { }
   shouldStop(input: {
@@ -104,7 +152,12 @@ export class StagnationTerminationPolicy implements TerminationPolicy {
   }
 }
 
-/** Simple rule-based failure classifier using probe reasons and basic metrics. */
+/**
+ * Reference implementation: Rule-based failure classifier.
+ * Optional meta-control component for diagnosing complex failure modes.
+ * Classifies failures based on probe reasons and metrics (entropy, hit counts, etc.).
+ * Most applications handle failures directly in their ProbePolicy.
+ */
 export class ReasonFailureClassifier<S, A> implements FailureClassifier<S, A> {
   constructor(
     private opts: {
