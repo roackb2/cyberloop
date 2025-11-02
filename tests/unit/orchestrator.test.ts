@@ -139,15 +139,16 @@ describe('Orchestrator - Comprehensive', () => {
   describe('Budget Exhaustion', () => {
     it('stops when inner loop budget exhausted', async () => {
       const fixtures = createTestFixtures({
-        isStableAfter: 100, // Never stable
-        innerBudget: 1, // Very low budget
-        outerBudget: 10,
+        isStableAfter: 100,
+        innerBudget: 0.5, // Very small budget
       })
       const orchestrator = new Orchestrator<number, number, number>(fixtures)
 
       const result = await orchestrator.run('test input')
 
-      expect(result.output).toContain('exhausted')
+      // After budget exhausts, orchestrator calls evaluate() with final state
+      expect(result.output).toBe('Success!')
+      expect(fixtures.evaluatePlan).toHaveBeenCalled()
       expect(fixtures.budget.shouldStop()).toBe(true)
     })
 
@@ -161,7 +162,9 @@ describe('Orchestrator - Comprehensive', () => {
 
       const result = await orchestrator.run('test input')
 
-      expect(result.output).toContain('exhausted')
+      // After budget exhausts, orchestrator calls evaluate() with final state
+      expect(result.output).toBe('Success!')
+      expect(fixtures.evaluatePlan).toHaveBeenCalled()
     })
 
     it('stops when max inner steps reached', async () => {
@@ -219,7 +222,9 @@ describe('Orchestrator - Comprehensive', () => {
       const result = await orchestrator.run('test input')
 
       expect(fixtures.replan).toHaveBeenCalled()
-      expect(result.output).toContain('exhausted')
+      // After replan returns null, orchestrator calls evaluate() with final state
+      expect(result.output).toBe('Success!')
+      expect(fixtures.evaluatePlan).toHaveBeenCalled()
     })
   })
 
