@@ -168,9 +168,15 @@ export class Orchestrator<S = State, A = Action, F = Feedback, D = ProbeData, R 
       break
     }
 
-    // Fallback: Return best effort result
+    // Fallback: Evaluate whatever state we have, even if not stable
+    // This ensures we always produce output rather than just giving up
+    this.logger?.info('\n[Outer Loop] Budget exhausted without finding stable state. Evaluating final state...')
+    const finalOutput = await this.planner.evaluate(state, [])
+    outerLoopCalls++
+    this.budget.outerLoop.record(2.0)
+
     return {
-      output: 'Exploration exhausted without finding stable solution',
+      output: finalOutput,
       explorationAttempts,
       innerLoopSteps,
       outerLoopCalls,
