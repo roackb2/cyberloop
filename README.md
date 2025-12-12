@@ -1,7 +1,7 @@
 # 🧠 CyberLoop
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](./LICENSE)
-[![DOI](https://zenodo.org/badge/1072923533.svg)](https://doi.org/10.5281/zenodo.17835643)
+[![DOI](https://zenodo.org/badge/1072923533.svg)](https://doi.org/10.5281/zenodo.17913395)
 [![PR Checks](https://github.com/roackb2/cyberloop/actions/workflows/pr-checks.yml/badge.svg?branch=main)](https://github.com/roackb2/cyberloop/actions/workflows/pr-checks.yml)
 
 ### The Thermodynamics of Intelligence
