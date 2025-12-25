@@ -8,7 +8,8 @@ export class PIDController {
   constructor(
     private Kp: number,
     private Ki: number,
-    private Kd: number
+    private Kd: number,
+    private stabilityThreshold = 0.1
   ) {
     this.integral = []; // Initialize empty, will adapt to dimension on first call
   }
@@ -42,7 +43,7 @@ export class PIDController {
 
     // In v2.1, "Stability" is defined by the controller not fighting the agent.
     // If correction is small, we are stable.
-    const isStable = magnitude < 0.1; // Magic number, should be configurable? Keeping simple for now.
+    const isStable = magnitude < this.stabilityThreshold;
 
     return {
       correctionVector: correction,

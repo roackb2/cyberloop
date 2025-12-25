@@ -1,5 +1,5 @@
 import type { KinematicsConfig } from './interfaces';
-import { add, angleBetween, reject, scale, subtract } from './math';
+import { add, angleBetween, norm, reject, scale, subtract } from './math';
 import type { KinematicState, Vector3D } from './types';
 
 export class PhysicsEngine {
@@ -44,7 +44,9 @@ export class PhysicsEngine {
     // error = D_i - proj_{D_{i-1}}(D_i)
     // This represents the component of the new heading that is orthogonal to the previous momentum
     let error: Vector3D;
-    if (prev.stepIndex === 0) {
+
+    // Check for singularity: if prevHeading is zero (start or no movement), we cannot project onto it.
+    if (prev.stepIndex === 0 || norm(prevHeading) < 1e-9) {
       // No previous heading to define "track", so error is zero
       error = heading.map(() => 0);
     } else {

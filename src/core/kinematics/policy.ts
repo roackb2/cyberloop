@@ -3,14 +3,7 @@ import type { Action, Feedback, State } from '../types';
 import type { PhysicsEngine } from './engine';
 import type { StateEmbedder } from './interfaces';
 import type { PIDController } from './pid';
-import type { KinematicState, Vector3D } from './types';
-
-export interface CorrectionAction {
-  type: 'CORRECTION';
-  vector: Vector3D;
-  magnitude: number;
-  log: string;
-}
+import type { CorrectionAction, KinematicState, Vector3D } from './types';
 
 export class KinematicProbePolicy<S extends State, A extends Action, F extends Feedback> implements ProbePolicy<S, A, F> {
   public id = 'kinematic-policy';
@@ -76,12 +69,13 @@ export class KinematicProbePolicy<S extends State, A extends Action, F extends F
       // Return a special correction action.
       // NOTE: The Action type A must be compatible with CorrectionAction.
       // We cast here assuming the user has configured the environment to handle this.
-      return {
+      const action: CorrectionAction = {
         type: 'CORRECTION',
         vector: correction.correctionVector,
         magnitude: correction.magnitude,
         log: correction.log
-      } as unknown as A;
+      };
+      return action as unknown as A;
     }
   }
 

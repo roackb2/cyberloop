@@ -15,3 +15,10 @@ export interface ControlSignal {
   isStable: boolean;          // Should we stop?
   log: string;               // Explanation for debug traces
 }
+
+export interface CorrectionAction {
+  type: 'CORRECTION';
+  vector: Vector3D;
+  magnitude: number;
+  log: string;
+}
