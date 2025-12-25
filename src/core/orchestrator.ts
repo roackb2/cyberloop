@@ -115,11 +115,11 @@ export class Orchestrator<S = State, A = Action, F = Feedback, D = ProbeData, R 
     // Outer loop call #1: Initial planning
     this.logger?.info('\n[Outer Loop] Calling planner.plan()...')
     let state = await this.planner.plan(userInput)
-    
+
     // Use inspectState if available, otherwise log full state
     const stateInspection = this.probes[0]?.inspectState?.(state) ?? state
     this.logger?.info(stateInspection, `[Outer Loop] Initial state`)
-    
+
     outerLoopCalls++
     this.budget.outerLoop.record(2.0) // Cost of LLM call
 
@@ -219,7 +219,7 @@ export class Orchestrator<S = State, A = Action, F = Feedback, D = ProbeData, R 
       })
 
       // Debug logging
-      const stateInspection = this.probes[0].inspectState?.(state) ?? JSON.stringify(state)
+      const stateInspection = this.probes[0]?.inspectState?.(state) ?? JSON.stringify(state)
       this.logger?.info(stateInspection, `[Inner Loop t=${t}], stable=${isStable}, budget=${this.budget.innerLoop.remaining().toFixed(2)}`)
 
       if (isStable) {
