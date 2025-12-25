@@ -72,6 +72,7 @@
     "@octokit/rest": "^21.0.0",
     "@openai/agents": "^0.1.9",
     "dotenv": "^17.2.3",
+    "ml-matrix": "^6.12.1",
     "pino": "^10.1.0",
     "zod": "^4.1.12"
   }
