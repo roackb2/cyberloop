@@ -1,7 +1,7 @@
 # 🧠 CyberLoop
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](./LICENSE)
-[![DOI](https://zenodo.org/badge/1072923533.svg)](https://doi.org/10.5281/zenodo.17913395)
+[![DOI](https://zenodo.org/badge/1072923533.svg)](https://doi.org/10.5281/zenodo.18051816)
 [![PR Checks](https://github.com/roackb2/cyberloop/actions/workflows/pr-checks.yml/badge.svg?branch=main)](https://github.com/roackb2/cyberloop/actions/workflows/pr-checks.yml)
 
 <p align="center">
@@ -54,7 +54,7 @@ yarn examples:wikipedia revolution
 | **Cost per Step** | ~$0.01 | **~$0.0001** | **99% Cheaper** |
 | **Behavior** | Stochastic | **Controlled** | Reproducible |
 
-> 🔗 **See full benchmark:** [docs/benchmarks/wikipedia/benchmark-wikipedia-navigation.md](https://www.google.com/search?q=docs/benchmarks/wikipedia/benchmark-wikipedia-navigation.md)
+> 🔗 **See full benchmark:** [docs/benchmarks/wikipedia/benchmark-wikipedia-navigation.md](docs/benchmarks/wikipedia/benchmark-wikipedia-navigation.md)
 
 ---
 
@@ -141,9 +141,10 @@ yarn examples:github
 
 ## 📂 Documentation
 
-* **Benchmarks:** [Wikipedia Navigation Results](https://www.google.com/search?q=docs/benchmarks/wikipedia/benchmark-wikipedia-navigation.md)
-* **Theory:** [AICL Whitepaper](https://www.google.com/search?q=./docs/whitepaper/AICL.md)
-* **Architecture:** [Inner/Outer Loop Spec](https://www.google.com/search?q=./docs/architecture/inner-outer-loop.md)
+* **Benchmarks:** [Wikipedia Navigation Results](docs/benchmarks/wikipedia/benchmark-wikipedia-navigation.md)
+* **Theory:** [AICL Whitepaper](docs/whitepaper/AICL.md)
+* **Architecture:** [Inner/Outer Loop Spec](docs/architecture/inner-outer-loop.md)
+* **Academic:** [Zenodo Record](https://zenodo.org/records/17835680) (Cite as Liang, 2025)
 
 ---
 
