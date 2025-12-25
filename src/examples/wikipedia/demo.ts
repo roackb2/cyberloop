@@ -9,11 +9,15 @@ import { WikiLadder } from '../../adapters/wikipedia/ladder';
 import { WikipediaPlanner } from '../../adapters/wikipedia/planner';
 import { GreedyWikiPolicy } from '../../adapters/wikipedia/policy';
 import { logger } from '../../adapters/wikipedia/telemetry';
+import type { WikiAction, WikiState } from '../../adapters/wikipedia/types';
 import { createControlBudget } from '../../core/budget/control-budget';
 import { PhysicsEngine } from '../../core/kinematics/engine';
 import { PIDController } from '../../core/kinematics/pid';
 import { KinematicProbePolicy } from '../../core/kinematics/policy';
 import { Orchestrator } from '../../core/orchestrator';
+import { ChainPolicy } from '../../core/policy/chain';
+import { BlacklistGuard } from '../../core/policy/guards/blacklist';
+import { BoredomGuard } from '../../core/policy/guards/boredom';
 
 interface Scenario {
   name: string;
@@ -80,7 +84,13 @@ async function main() {
   const goalEmbedding = goalResponse.data[0].embedding;
 
   // 2. Setup Policies
-  const innerPolicy = new GreedyWikiPolicy(embedder, goalEmbedding);
+  const basePolicy = new GreedyWikiPolicy(embedder, goalEmbedding);
+
+  // Wrap base policy with Guards
+  const innerPolicy = new ChainPolicy<WikiState, WikiAction, number>(basePolicy, [
+    new BlacklistGuard<WikiState>(),
+    new BoredomGuard<WikiState>()
+  ]);
 
   const kinematics = new PhysicsEngine({
     ProcessNoise: 0.1,

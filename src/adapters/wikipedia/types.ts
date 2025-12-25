@@ -12,6 +12,8 @@ export interface WikiState {
   links: string[];
   blacklist?: string[];
   lastLinkClicked?: string;
+  // Modifiers for policy
+  candidateWeights?: Record<string, number>;
 }
 
 export type WikiAction =
