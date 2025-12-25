@@ -1,6 +1,7 @@
 import { Agent, run } from '@openai/agents';
 
 import type { Planner } from '../../core/interfaces';
+import { fetchWikiPage } from './api';
 import { logger } from './telemetry';
 import type { WikiState } from './types';
 
@@ -42,14 +43,22 @@ Return JSON:
 
     logger.info({ parsed }, '[Planner] Parsed route');
 
+    // Hydrate the initial state!
+    logger.info(`[Planner] Hydrating initial state for: ${parsed.source}...`);
+    const pageData = await fetchWikiPage(parsed.source);
+
+    if (!pageData) {
+      throw new Error(`[Planner] Could not fetch start page: ${parsed.source}`);
+    }
+
     return {
-      currentTitle: parsed.source,
-      summary: '', // Will be filled by Env on first observe/fetch
-      url: `https://en.wikipedia.org/wiki/${encodeURIComponent(parsed.source)}`,
+      currentTitle: pageData.currentTitle ?? parsed.source,
+      summary: pageData.summary ?? '',
+      url: pageData.url ?? `https://en.wikipedia.org/wiki/${encodeURIComponent(parsed.source)}`,
       goal: parsed.target,
       history: [],
       depth: 0,
-      links: []
+      links: pageData.links ?? []
     };
   }
 

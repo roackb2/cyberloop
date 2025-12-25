@@ -16,3 +16,13 @@ export type WikiAction =
   | { type: 'NAVIGATE'; title: string }
   | { type: 'DONE'; result: string }
   | { type: 'CORRECTION'; vector: number[]; magnitude: number; log: string }; // From v2.1 Core
+
+export interface WikiResponse {
+  query?: {
+    pages?: Record<string, {
+      title: string;
+      extract?: string;
+      links?: { title: string }[];
+    }>
+  }
+}
