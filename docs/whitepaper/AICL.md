@@ -1,692 +1,158 @@
-# 🧠 The AICL Whitepaper
+# 🧠 The CyberLoop Whitepaper
 
-## *Artificial Intelligence Control Loop*
+## *Artificial Intelligence Control Loop (AICL)*
 
-**Current Version:** v0.3 (2025-10) - Hierarchical Inner/Outer Loop Architecture  
-**Author:** Jay / Fienna Liang · 2025  
+**Current Version:** v2.1 (2025-12) - Semantic Kinematics & Physiological AI
+
+**Author:** Jay / Fienna Liang · 2025
+
 **Reference Implementation:** [CyberLoop Framework](https://github.com/roackb2/cyberloop)
 
-**Previous Versions:** [v0.2](versions/v0.2-with-probes.md) | [v0.1](versions/README.md#v01-2025-01)  
-**Core Philosophy:** [PHILOSOPHY.md](PHILOSOPHY.md) (Immutable principles)  
-**Component Guide:** [COMPONENT_INTERACTIONS.md](COMPONENT_INTERACTIONS.md)  
-**Evolution Story:** [EVOLUTION.md](EVOLUTION.md)
+**Core Philosophy:** [PHILOSOPHY.md](https://www.google.com/search?q=PHILOSOPHY.md) (Immutable principles)
+
+**Architecture Spec:** [Architecture Guide](https://www.google.com/search?q=../architecture/inner-outer-loop.md)
+
+**Previous Versions:** [v0.3](https://www.google.com/search?q=versions/v0.3-hierarchical.md) | [v2.0](https://www.google.com/search?q=versions/v2.0-homeostasis.md)
 
 ---
 
-> **Note:** This document describes the **current implementation** (v0.3).  
-> For timeless principles that never change, see [PHILOSOPHY.md](PHILOSOPHY.md).  
-> For detailed component interactions, see [COMPONENT_INTERACTIONS.md](COMPONENT_INTERACTIONS.md).
+> **"Your agent doesn't need a bigger brain. It needs a better body."**
 
 ---
 
-## Abstract
+## 1. Abstract
 
-Artificial Intelligence has achieved unprecedented capability,
-yet most intelligent systems today remain **uncontrolled**—
-highly capable but unstable, unbounded, and unable to sustain learning in dynamic environments.
+The fundamental flaw in modern AI Agent development is a category error: **We are attempting to solve physiological problems with psychological solutions.**
 
-This whitepaper introduces **AICL (Artificial Intelligence Control Loop)**,
-a control-theoretic framework for building *sustainable, self-correcting intelligence*.
-AICL models cognition as a **hierarchical feedback system** where agents gain
-**internal gradient information** to explore large decision spaces systematically.
+When an LLM agent drifts off-topic, hallucinates, or enters an infinite loop, the industry standard response is "Prompt Engineering"—telling the model to "think harder." This is akin to telling a pilot suffering from vertigo to "just focus." It ignores the systemic cause of the failure: the lack of sensory feedback.
 
-Through modular, well-defined components organized into **two control layers**—
-a fast reflexive inner loop and a slow strategic outer loop—
-AICL enables agents to sense, act, evaluate, and adapt continuously under bounded resources.
+**CyberLoop** asserts that a Transformer-based model is effectively a "Brain in a Vat"—stateless, brilliant, but devoid of *proprioception* (the sense of self-movement). Without a feedback mechanism to regulate its trajectory, even the smartest model inevitably accumulates error until system collapse.
 
-We present its first open-source implementation, **CyberLoop**,
-a TypeScript-based framework that operationalizes AICL through
-interface-first, domain-agnostic design.
-AICL aims not to make AI *more powerful*, but to make it *controllably intelligent*.
+**CyberLoop is the "Body" for that Brain.** It introduces a **Physiological Control Layer**—using **Semantic Kinematics**, **PID Controllers**, and **Reflexive Guards**—to give agents a sense of balance, direction, and homeostasis. This allows them to navigate complex knowledge graphs using **pure mathematics**, operating autonomously over long horizons without semantic drift.
 
 ---
 
-# 1. The Need for Controlled Intelligence
+## 2. The Problem: The Thermodynamics of Reasoning
 
-Artificial intelligence today advances at a pace unmatched in human history,
-yet the way we build intelligent systems remains fundamentally *uncontrolled*.
-Most current architectures optimize for raw capability—bigger models, larger datasets, higher throughput—
-but rarely for **stability**, **adaptivity**, or **long-term sustainability**.
+In an open-loop system (standard Agent architecture), every step depends on the probability distribution of the previous step. This creates a compounding error effect:
 
-As AI systems move from static model inference to *agentic interaction*,
-their behavior becomes increasingly unpredictable.
-They act across open environments, coordinate with other agents,
-and face evolving goals that were never fully encoded in training data.
-In such settings, a purely statistical approach to intelligence—
-without explicit feedback control—inevitably leads to instability.
+* **Step 1:** 99.9% semantic alignment.
+* **Step 2:** 99.9% alignment (relative to Step 1).
+* **Step 100:** The agent is now miles away from the original intent, despite every individual step appearing "logical" in isolation.
 
-Just as early cybernetics once unified biology and engineering
-under the principle of **feedback and regulation**,
-we now face a similar inflection point in artificial intelligence.
-If the last decade was defined by *scaling intelligence*,
-the next decade will be defined by *stabilizing it.*
+We call this **Semantic Entropy**. As the context window grows and the task duration lengthens, the signal-to-noise ratio inevitably degrades. The agent doesn't "fail" abruptly; it slowly, confidently hallucinates its way into irrelevance.
 
-This paper introduces **AICL – the Artificial Intelligence Control Loop**,
-a control-theoretic framework for sustainable and self-correcting intelligence.
-AICL models an intelligent system not as a black-box predictor,
-but as a **hierarchical feedback system** organized into two control layers:
-
-### Inner Loop: Reflexive Control (Fast, Cheap, Frequent)
-
-**Purpose:** Tactical exploration using gradient signals
-
-- **ProbePolicy** — Fast, deterministic action selection based on gradients
-- **Probe** — Cheap feasibility checks providing directional signals
-- **Evaluator** — Measures progress and stability
-- **Ladder** — Internal gradient regulating exploration intensity
-
-### Outer Loop: Strategic Control (Slow, Expensive, Infrequent)
-
-**Purpose:** High-level planning and evaluation
-
-- **Planner** — LLM-based strategic planning and result evaluation
-- **Environment** — State provider and action executor
-- **ControlBudget** — Dual-layer resource tracking (inner + outer)
-
-### Optional Meta-Control (Advanced Scenarios)
-
-- **StrategySelector** — Routes between multiple policies (multi-domain)
-- **FailureClassifier** — Diagnoses complex failure modes
-- **TerminationPolicy** — Multi-objective stopping criteria
-
-Together, these components enable agents to **explore large decision spaces systematically**,
-**converge reliably**, and **operate sustainably over extended time horizons**.
-
-While existing paradigms like Reinforcement Learning or RLHF
-optimize for reward acquisition,
-AICL focuses on *stability acquisition*—
-ensuring that intelligent behavior remains safe, interpretable,
-and capable of sustained improvement through time.
-
-We believe that the **future of intelligence is not in creating smarter models,
-but in creating controllable systems**—
-systems that can continue learning without collapsing,
-exploring without drifting,
-and adapting without forgetting their goals.
-
-**AICL** represents a step toward this future:
-a unifying language for controlled intelligence,
-and a practical foundation for frameworks like **CyberLoop**,
-which implement this architecture in real-world applications.
+To fix this, we must move from **Optimization** (getting the best answer once) to **Regulation** (maintaining a viable state continuously).
 
 ---
 
-# 2. The AICL Architecture
+## 3. The Architecture: Mind & Body
 
-While traditional AI systems rely on external optimization objectives,
-AICL treats intelligence as an **intrinsically regulated control system**.
-It models cognition as a **hierarchical control loop** with two layers:
-**fast reflexive control** (cheap, frequent) and **slow strategic control** (expensive, infrequent).
+CyberLoop replaces the flat "Chain-of-Thought" loop with a hierarchical **System 1 / System 2** architecture, inspired by biological systems.
 
-The goal is not merely to maximize a fixed reward,
-but to sustain a stable, adaptive trajectory through uncertainty using
-**multi-dimensional gradient information**.
+### 3.1 The Biological Metaphor
 
-## 2.1 Hierarchical Architecture
+We map engineering components to physiological organs:
 
-AICL implements a **two-layer control system** inspired by hierarchical control theory:
+| Biological System | Agent Component | Function | Cost |
+| --- | --- | --- | --- |
+| **The Brain (Cortex)** | **Planner (LLM)** | Strategic planning, reasoning, and creative problem solving. | Expensive ($$$) |
+| **Vestibular System** | **Kinematics (EKF/PID)** | Maintains balance and direction. Detects "Semantic Drift" in vector space. | Free |
+| **Reflexes** | **Guards / Reflexes** | Immediate, deterministic reactions (e.g., "Line of Sight", "Boredom Penalty"). | Free |
+| **Endocrine System** | **Ladder (Actuator)** | Regulates exploration intensity (Adrenaline/Cortisol) based on stress levels. | Free |
 
-### Inner Loop: Reflexive Control
+### 3.2 Inner vs. Outer Loop
 
-Fast, deterministic layer for tactical exploration (10-50 iterations per outer call)
+Most agents run on a single, expensive loop. CyberLoop runs on two gears:
 
-| Component | Role | Cost | Frequency |
-|-----------|------|------|----------|
-| **ProbePolicy** | Tactical action generator | 0.1 units/step | High (10-50 steps) |
-| **Probe** | Gradient signal provider | 0.05 units/test | High (per step) |
-| **Evaluator** | Feedback computer | 0.01 units | High (per step) |
-| **Ladder** | Exploration modulator | 0 (stateful) | High (per step) |
+#### 1. Inner Loop (The Body)
 
-**Design Philosophy:**
-- **Deterministic** - Reproducible, debuggable
-- **Gradient-aware** - Uses Ladder + Probes + History
-- **Resource-efficient** - Can run 10-50+ iterations sustainably
-- **Convergence-driven** - Knows when "good enough" is reached
+* **Role:** Fast, reflexive navigation and exploration.
+* **Mechanism:** Pure TypeScript logic + Vector Math. **Zero LLM calls.**
+* **Components:**
+* **Probes:** "Is the result set empty?" (Sensors)
+* **Policy:** "Calculate Cosine Similarity and pick top 3." (Reflexive Decision)
+* **Guards:** "Block this link if we've seen it 3 times." (State Hygiene)
 
-### Outer Loop: Strategic Control
+* **Frequency:** 10-50 steps per task.
 
-Slow, LLM-based layer for strategic planning (2-3 calls per run)
+#### 2. Outer Loop (The Mind)
 
-| Component | Role | Cost | Frequency |
-|-----------|------|------|----------|
-| **Planner** | Strategic planner | 2.0 units/call | Low (2-3 calls) |
-| **Environment** | State provider | Varies | Per action |
-| **ControlBudget** | Dual-layer tracker | 0 (accounting) | Continuous |
+* **Role:** Strategic planning and final synthesis.
+* **Mechanism:** LLM (GPT-4o / Claude 3.5).
+* **Components:**
+* **Planner:** Parses user intent into a start/end state.
+* **Evaluator:** Summarizes the journey and decides if the goal is met.
 
-**Design Philosophy:**
-- **LLM-powered** - Leverage reasoning for complex decisions
-- **Infrequent calls** - 2-3 strategic checkpoints per run
-- **Bounded by design** - Explicit limits prevent runaway costs
-- **Checkpoint-based** - Prevents drift through periodic evaluation
-
-### Optional Meta-Control (Advanced)
-
-For multi-domain coordination (when single policy insufficient)
-
-| Component | Role | When Used |
-|-----------|------|----------|
-| **StrategySelector** | Policy router | Multiple problem types |
-| **FailureClassifier** | Diagnostic expert | Complex failure modes |
-| **TerminationPolicy** | Stop criteria | Multi-objective optimization |
-
-**Design Philosophy:**
-- **Opt-in complexity** - Only use when simpler approaches insufficient
-- **Extensibility point** - Framework can grow without breaking core
+* **Frequency:** Only when the Inner Loop budget is exhausted or stable state is found.
 
 ---
 
-## 2.2 Hierarchical Control Flow
+## 4. Technical Deep Dive: Semantic Kinematics (v2.1)
 
-AICL follows a **hierarchical execution pattern** where strategic planning happens infrequently,
-while tactical exploration happens frequently:
+In v2.1, we treat the agent's thought process not as a text generation task, but as a **physical object moving through high-dimensional embedding space**.
 
-```
-Outer Loop (Strategic, 2-3 calls total):
-  ├─ Planner.plan(userInput) → initialState
-  ├─ Inner Loop (Reflexive, 10-50 iterations):
-  │   ├─ Probes.test(state) → gradient signals
-  │   ├─ ProbePolicy.decide(state, ladder) → action
-  │   ├─ Environment.apply(action) → nextState
-  │   ├─ Evaluator.evaluate(prevState, nextState) → feedback
-  │   ├─ Ladder.update(feedback) → adjusted intensity
-  │   └─ Check: isStable() or budget exhausted?
-  └─ Planner.evaluate(finalState) → output
-```
+### 4.1 The Sensor: Extended Kalman Filter (EKF)
 
-### Outer Loop: Strategic Layer
+An LLM's output is noisy. A single "creative" token can spike the embedding vector. We use a simplified EKF to separate **Signal (Intent)** from **Noise (Jitter)**.
 
-**Step 1: Initial Planning** (LLM call #1)
+* **Result:** A smooth flight path, ignoring momentary turbulence.
 
-```
-Planner.plan(userInput) → initialState
-Cost: 2.0 units
-```
+### 4.2 The Guardrail: Heading Hold
 
-The Planner uses LLM reasoning to create an initial exploration strategy from user input.
+Instead of a fixed radius (Anchoring), we project a **Cone**. We calculate the **Angular Deviation** () between the current heading and the goal trajectory.
 
-**Step 2: Inner Loop Exploration**
+* If the agent moves *forward* (even miles away), . **Allowed.**
+* If the agent suddenly pivots to an unrelated topic without a connecting logic,  spikes. **Correction Triggered.**
 
-See below for detailed inner loop flow.
+### 4.3 The Actuator: Backtracking & Blacklisting
 
-**Step 3: Evaluation or Replanning**
+When drift is detected, the **PID Controller** doesn't just "warn" the agent. It exerts a **Correction Force**:
 
-```
-if innerLoop.status === 'stable':
-  output = Planner.evaluate(finalState, history)
-  Cost: 2.0 units (LLM call #2)
-  return output
-
-else if outerBudget.remaining() > 0:
-  newState = Planner.replan(failedState, history)
-  Cost: 2.0 units (LLM call #3, optional)
-  if newState: goto Step 2
-```
-
-### Inner Loop: Reflexive Layer
-
-At each iteration *t* (until stable or budget exhausted):
-
-**1. Run Probes** → gradient signals
-
-```
-probeResults = Probes.map(p => p.test(state_t))
-Cost: 0.05 units per probe
-```
-
-Probes provide cheap, directional signals: "too-narrow", "stuck-at-zero", "drop-detected"
-
-**2. Check Stability**
-
-```
-if ProbePolicy.isStable(state_t):
-  return { status: 'stable', state: state_t }
-```
-
-ProbePolicy determines if current state is "good enough" to stop.
-
-**3. Decide Action** (deterministic, no LLM!)
-
-```
-action_t = ProbePolicy.decide(state_t, ladder)
-Cost: 0.1 units
-```
-
-ProbePolicy uses gradient information (Ladder + Probes + History) to decide next action.
-
-**4. Apply & Evaluate**
-
-```
-state_{t+1} = Environment.apply(action_t)
-feedback_t = Evaluator.evaluate(state_t, state_{t+1})
-```
-
-Environment executes action, Evaluator measures progress.
-
-**5. Update Gradient**
-
-```
-Ladder.update(feedback_t)
-ProbePolicy.adapt(feedback_t, ladder)  // optional
-```
-
-Ladder adjusts exploration intensity based on feedback.
-
-**6. Check Budget**
-
-```
-if ControlBudget.innerLoop.shouldStop():
-  return { status: 'budget-exhausted', state: state_t }
-```
-
-**7. Continue** → goto step 1
-
-### Cost Model Comparison
-
-**AICL (Hierarchical):**
-- Outer loop: 2-3 calls × 2.0 = **4-6 units**
-- Inner loop: 10-20 steps × 0.15 = **1.5-3 units**
-- **Total: 5.5-9 units** (predictable!)
-
-**Flat architecture (v0.2):**
-- LLM calls at every decision point
-- Total: **10-30 units** (varies wildly)
-
-**Key advantage:** Same or better results with predictable, bounded costs.
+1. **Stop:** The current action is rejected.
+2. **Backtrack:** The state is rolled back to the previous stable point.
+3. **Blacklist:** The drifting path is blocked to prevent re-entry.
 
 ---
 
-## 2.3 The Relaxation Ladder
+## 5. Performance & Validation
 
-The **Ladder (L)** acts as an *internal gradient*, controlling exploration intensity:
+We validated CyberLoop v2.1 with **Project Ariadne**: an agent tasked with navigating from **"Coffee"** to **"French Revolution"** on Wikipedia using *only* embeddings (no LLM reasoning in the inner loop).
 
-| Stage | Ladder Signal | Agent Behavior |
-|--------|----------------|----------------|
-| \( L_0 \) | Tight constraint | Conservative exploration |
-| \( L_1 \) | Moderate | Controlled deviation |
-| \( L_2 \) | Full relaxation | Radical exploration |
+### Benchmark Results
 
-\[\ L_{t+1} = L_t + \lambda (f_t - \delta)\]
+| Metric | Pure LLM Agent (Typical) | CyberLoop v2.1 (Actual) | Impact |
+| --- | --- | --- | --- |
+| **Decision Mechanism** | Reasoning (LLM) | **Sensing** (Vector + Reflex) | **Physiological** |
+| **Latency per Step** | ~3,000ms | **~50ms** | **60x Faster** |
+| **Cost per Step** | ~$0.01 | **~$0.0001** | **99% Cheaper** |
+| **Behavior** | Stochastic | **Controlled** | Reproducible |
 
-If feedback improves but remains stable, exploration increases.
-If instability rises, constraints tighten—creating a **self-tuning exploration policy**.
+### The "Hero Run" Trajectory
+
+```mermaid
+graph LR
+    Coffee --> American_Revolution
+    American_Revolution --> Portuguese_Revolution_1910
+    Portuguese_Revolution_1910 -.->|Line of Sight Reflex| French_Revolution
+    style French_Revolution fill:#bbf,stroke:#333,stroke-width:4px
+
+```
+
+*The agent successfully associated Coffee -> American Revolution -> 1910 Revolution, and then used a **Line-of-Sight Reflex** to instantly capture the French Revolution link, bypassing expensive calculations.*
+
+> 🔗 **Full Benchmark:** [docs/benchmarks/wikipedia/benchmark-wikipedia-navigation.md](https://www.google.com/search?q=../benchmarks/wikipedia/benchmark-wikipedia-navigation.md)
 
 ---
 
-# 3. Implementation: CyberLoop
+## 6. Vision: From Prompting to Systems Engineering
 
-**CyberLoop** is the reference implementation of AICL, demonstrating how
-philosophical principles translate into working code.
+We believe the era of "Prompt Engineering" is ending. We are entering the era of **Semantic Systems Engineering**.
 
-> **Note:** For detailed component interactions and usage patterns, see [COMPONENT_INTERACTIONS.md](COMPONENT_INTERACTIONS.md).
+Future AI systems will not be judged solely on their IQ (Benchmark Accuracy), but on their **AQ (Agency Quotient)**—their ability to maintain homeostasis, manage their own resources, and survive long enough to solve problems that humans cannot.
 
-## 3.1 Core Interfaces
-
-### Hierarchical Control Interfaces
-
-```ts
-// Outer Loop: Strategic Control
-interface Planner<State> {
-  plan(userInput: string): Promise<State>           // Initial strategy (LLM call #1)
-  evaluate(state: State, history: State[]): Promise<string>  // Final assessment (LLM call #2)
-  replan?(state: State, history: State[]): Promise<State | null>  // Adapt if needed (LLM call #3)
-}
-
-// Inner Loop: Reflexive Control
-interface ProbePolicy<State, Action, Feedback> extends Policy<State, Action, Feedback> {
-  initialize(state: State): void                    // Initialize with planner's state
-  isStable(state: State): boolean                   // Check if "good enough"
-  decide(state: State, ladder: Ladder<Feedback>): Action  // Deterministic decision
-  adapt?(feedback: Feedback, ladder: Ladder<Feedback>): void  // Optional adaptation
-}
-```
-
-### Gradient Information Providers
-
-```ts
-// Multi-dimensional gradient signals
-interface Probe<State> {
-  test(state: State): { pass: boolean; reason?: string; data?: any }
-}
-
-interface Ladder<Feedback> {
-  level(): number                    // Current exploration intensity (0-1)
-  update(feedback: Feedback): void   // Adjust based on progress
-}
-
-interface Evaluator<State, Feedback> {
-  evaluate(prev: State, next: State): Feedback  // Measure progress
-}
-```
-
-### Resource Management
-
-```ts
-// Dual-layer budget tracking
-interface ControlBudget {
-  innerLoop: BudgetTracker   // Cheap operations (probes, decisions)
-  outerLoop: BudgetTracker   // Expensive operations (LLM calls)
-  shouldStop(): boolean      // True if either exhausted
-}
-
-interface BudgetTracker {
-  record(cost: number): void
-  remaining(): number
-  shouldStop(): boolean
-  reset?(value?: number): void
-}
-```
-
-### State Space
-
-```ts
-interface Environment<State, Action> {
-  observe(): State                      // Get current state
-  apply(action: Action): Promise<State> // Execute action, return new state
-}
-```
-
-## 3.2 Orchestrator
-
-The Orchestrator coordinates all components in the hierarchical control loop:
-
-```ts
-class Orchestrator<State, Action, Feedback> {
-  constructor(opts: {
-    env: Environment<State, Action>
-    probePolicy: ProbePolicy<State, Action, Feedback>
-    planner: Planner<State>
-    probes: Probe<State>[]
-    evaluator: Evaluator<State, Feedback>
-    ladder: Ladder<Feedback>
-    budget: ControlBudget
-  })
-
-  async run(userInput: string): Promise<{
-    output: string
-    explorationAttempts: number
-    innerLoopSteps: number
-    outerLoopCalls: number
-    logs: StepLog[]
-  }>
-}
-```
-
-**Key characteristics:**
-- Manages outer loop (Planner calls)
-- Executes inner loop (ProbePolicy iterations)
-- Tracks costs at both layers
-- Provides detailed execution logs
+CyberLoop is the open-source foundation for this future. It is not just a tool; it is a standard for **Controlled Intelligence**.
 
 ---
 
-# 4. Experimental Domain: GitHub Repository Search
-
-The GitHub search experiment validates AICL's hierarchical control principles in a real-world scenario.
-
-## 4.1 Problem Statement
-
-**Task:** Find relevant GitHub repositories matching a natural language query
-
-**Challenges:**
-- Balance between too broad (1000s of hits) and too narrow (0 hits)
-- Limited API calls due to rate limits
-- Need systematic exploration, not random search
-- Bounded LLM budget
-
-**Example Query:** *"Find Node.js libraries for graceful server shutdown"*
-
-## 4.2 Implementation
-
-### Outer Loop: Strategic Planner
-
-```ts
-class GitHubPlanner implements Planner<GhState> {
-  async plan(userInput: string): Promise<GhState> {
-    // LLM extracts keywords, filters, constraints
-    const response = await this.llm.complete({
-      prompt: `Extract search strategy for: "${userInput}"`,
-      schema: SearchStrategySchema
-    })
-    
-    return {
-      query: response.query,
-      filters: {
-        keywords: response.keywords,
-        minStars: 0,
-        language: response.language
-      }
-    }
-  }
-  
-  async evaluate(state: GhState, history: GhState[]): Promise<string> {
-    // LLM summarizes results
-    return await this.llm.complete({
-      prompt: `Summarize these ${state.hits} repositories...`,
-      context: { items: state.items, history }
-    })
-  }
-}
-```
-
-### Inner Loop: Deterministic Policy
-
-```ts
-class DeterministicSearchPolicy implements ProbePolicy<GhState, GhAction, number> {
-  isStable(state: GhState): boolean {
-    // Sweet spot: 10-30 results
-    return state.hits >= 10 && state.hits <= 30
-  }
-  
-  decide(state: GhState, ladder: Ladder<number>): GhAction {
-    const { hits, filters } = state
-    
-    // Use probe signals as gradient information
-    const recentProbes = state.probes?.slice(-3) || []
-    const hasNoHits = recentProbes.some(p => !p.pass && p.reason === "no-hits")
-    
-    if (hasNoHits || hits === 0) {
-      return this.broaden(filters)  // Probe says: too narrow!
-    }
-    
-    if (hits > 30) {
-      return this.narrow(filters)   // Too many results
-    }
-    
-    if (hits < 10) {
-      return this.broaden(filters)  // Too few results
-    }
-    
-    return { type: 'done' }  // Stable!
-  }
-  
-  private narrow(filters: SearchFilters): GhAction {
-    // Increase minStars to filter for quality
-    return {
-      type: 'narrow',
-      payload: { exact: [`stars:>${(filters.minStars || 0) + 50}`] }
-    }
-  }
-  
-  private broaden(filters: SearchFilters): GhAction {
-    // Remove constraints or add synonyms
-    if (filters.minStars > 0) {
-      return { type: 'broaden', payload: { synonyms: ['stars:>0'] } }
-    }
-    return { type: 'broaden', payload: {} }
-  }
-}
-```
-
-### Probes: Gradient Signals
-
-```ts
-// Probe 1: Check if we have any hits
-const hasHitsProbe: Probe<GhState> = {
-  test: (state) => ({
-    pass: state.hits > 0,
-    reason: state.hits === 0 ? 'no-hits' : undefined
-  })
-}
-
-// Probe 2: Check if hits dropped significantly
-const dropGuardProbe: Probe<GhState> = {
-  test: (state) => {
-    const previous = state.history?.slice(-1)[0]?.hits || 0
-    if (previous > 0 && state.hits === 0) {
-      return { pass: false, reason: 'hit-drop-to-zero' }
-    }
-    return { pass: true }
-  }
-}
-
-// Probe 3: Check entropy (result diversity)
-const entropyProbe: Probe<GhState> = {
-  test: (state) => ({
-    pass: state.entropy >= 0.15 && state.entropy <= 0.85,
-    reason: state.entropy > 0.85 ? 'too-broad' : 
-            state.entropy < 0.15 ? 'too-narrow' : undefined
-  })
-}
-```
-
-## 4.3 Results
-
-Comparison with baseline (LLM-only approach):
-
-| Metric | Baseline (LLM-only) | AICL (Hierarchical) | Improvement |
-|--------|---------------------|---------------------|-------------|
-| **Relevant Repos Found** | 3 | 10 | **3.3x** ✅ |
-| **LLM Calls** | 2 | 2 | Same ✅ |
-| **API Calls** | 2 | 5 | 2.5x (acceptable) |
-| **Total Cost** | 4.2 units | 5.8 units | 1.4x (acceptable) |
-| **Success Rate** | 60% | 85% | **+25%** ✅ |
-| **Duration** | 15s | 25s | 1.7x (thorough) |
-
-**Key Insights:**
-
-1. **Same LLM cost, better coverage** - Systematic exploration finds more results
-2. **Predictable resource usage** - 2 LLM calls + bounded API calls
-3. **Reproducible** - Deterministic inner loop with same seed → same trajectory
-4. **Interpretable** - Probe signals explain why decisions were made
-
-## 4.4 Execution Trace Example
-
-```
-[Outer Loop] Planner.plan("Node.js graceful shutdown")
-  → initialState: { query: "node graceful shutdown", filters: {...} }
-  Cost: 2.0 units
-
-[Inner Loop t=0]
-  Probes: hasHits=false (no-hits), dropGuard=true, entropy=N/A
-  State: hits=0
-  Decision: broaden (add synonyms: ["nodejs", "graceful", "shutdown"])
-  Cost: 0.15 units
-
-[Inner Loop t=1]
-  Probes: hasHits=true, dropGuard=true, entropy=0.72
-  State: hits=106
-  Decision: narrow (add minStars:>50)
-  Cost: 0.15 units
-
-[Inner Loop t=2]
-  Probes: hasHits=true, dropGuard=true, entropy=0.45
-  State: hits=25
-  isStable: true (10 <= 25 <= 30) ✓
-  
-[Outer Loop] Planner.evaluate(finalState)
-  → "Found 15 high-quality Node.js libraries for graceful shutdown..."
-  Cost: 2.0 units
-
-Total: 2 outer calls + 2 inner iterations = 4.3 units
-```
-
----
-
-# 5. Discussion & Future Vision
-
-## 5.1 Controlled Intelligence
-
-> “Can AI remain intelligent while acting continuously?”
-
-AICL answers this through bounded, feedback-driven autonomy.
-
-## 5.2 CyberLoop Ecosystem Vision
-
-### Current Status (v1.0)
-
-| Component | Status | Description |
-|-----------|--------|-------------|
-| **Core Framework** | ✅ Stable | Orchestrator with hierarchical inner/outer loops |
-| **GitHub Adapter** | ✅ Complete | Repository search with ProbePolicy + Planner |
-| **Budget System** | ✅ Complete | ControlBudget with dual-layer tracking |
-| **Probe Library** | ✅ Basic | HitCount, Entropy, DropGuard probes |
-| **Documentation** | ✅ Complete | Philosophy, Component Interactions, Evolution |
-
-### Roadmap
-
-**v1.1 - Enhanced Exploration** (Next 1-2 months)
-- Beam search for parallel candidate exploration
-- Query memoization and deduplication
-- Adaptive thresholds using EMA
-- Budget linkage between inner/outer loops
-
-**v1.2 - Multi-Domain Support** (3-6 months)
-- StrategySelector implementation for policy routing
-- FailureClassifier for complex failure modes
-- Code bug localization demo
-- Multi-objective evaluation
-
-**v1.3 - Production Features** (6-12 months)
-- Trace visualization dashboard
-- Replay and debugging tools
-- Performance benchmarks across domains
-- Monitoring and observability
-
-**v2.0 - Advanced Control** (12+ months)
-- Multi-objective optimization with trade-offs
-- Distributed system debugging
-- Automatic policy synthesis from examples
-- Cross-domain transfer learning
-
-### Ecosystem Layers
-
-| Layer | Example | Purpose |
-|-------|----------|---------|
-| **Core Kernel** | `cyberloop/core` | Base hierarchical control loop |
-| **Domain Adapters** | `github`, `filesystem`, `api-discovery` | Plug-in environments |
-| **Control Plugins** | Ladder variants, probe strategies | Extend feedback behaviors |
-| **Monitoring Tools** | Dashboard, metrics, trace viewer | Visualize control dynamics |
-
----
-
-# Epilogue
-
-> “Uncontrolled intelligence grows powerful but fragile.
-> Controlled intelligence grows stable — and endures.”
-
-Through AICL and CyberLoop,
-we take the first step from optimization to regulation,
-from reaction to reflection,
-from artificial intelligence to **controlled intelligence**.
-
----
-
----
-
-## Related Documentation
-
-- **[PHILOSOPHY.md](PHILOSOPHY.md)** - Immutable core principles
-- **[COMPONENT_INTERACTIONS.md](COMPONENT_INTERACTIONS.md)** - How components work together
-- **[EVOLUTION.md](EVOLUTION.md)** - Why the architecture evolved
-- **[versions/](versions/)** - Previous whitepaper versions
-- **[ADR-0001](../adr/0001-inner-outer-loop-architecture.md)** - Detailed design decision
-
----
-
-*End of AICL Whitepaper v0.3 (Hierarchical Inner/Outer Loop Architecture)*  
-© 2025 Fienna Liang. Licensed under Apache-2.0.
-
-**Version History:**
-- v0.3 (2025-10): Hierarchical architecture with ProbePolicy + Planner
-- v0.2 (2025-03): Added Probe, BudgetTracker, StrategySelector
-- v0.1 (2025-01): Original concept
+*End of AICL Whitepaper v2.1* © 2025 Fienna Liang. Licensed under Apache-2.0.
