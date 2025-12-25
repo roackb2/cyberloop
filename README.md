@@ -4,83 +4,103 @@
 [![DOI](https://zenodo.org/badge/1072923533.svg)](https://doi.org/10.5281/zenodo.17913395)
 [![PR Checks](https://github.com/roackb2/cyberloop/actions/workflows/pr-checks.yml/badge.svg?branch=main)](https://github.com/roackb2/cyberloop/actions/workflows/pr-checks.yml)
 
-### The Thermodynamics of Intelligence
+<p align="center">
+<img src="./docs/images/concept-graph.png" alt="Thermodynamics of Agent Reasoning" width="800">
+</p>
 
-> **"Stop building open-loop agents. They drift. They fail. They burn money."**
+<p align="center">
+<strong>"Stop building open-loop agents. They drift. They fail. They burn money."</strong>
 
-![Thermodynamics of Agent Reasoning](./docs/images/concept-graph.png)
+<em>Figure 1: Conceptual model of stability. Standard agents (Red) accumulate entropy over time.
 
-> *Figure 1: Conceptual model of stability in Agentic Systems. Standard agents (Red) tend to accumulate semantic entropy over time. CyberLoop (Blue) aims to dampen this oscillation through closed-loop feedback.*
-
-**CyberLoop** is the reference implementation of **AICL (Artificial Intelligence Control Loop)** — a framework that treats Agentic Reasoning not as a prompt engineering problem, but as a **Control Theory problem**.
-
-Most agents today are **Open Loop**: they generate tokens based on probability, accumulating semantic entropy with every step. CyberLoop is **Closed Loop**: it introduces **Deterministic Probes** (Sensors) and **Relaxation Ladders** (Actuators) to enforce convergence towards a goal.
+CyberLoop (Blue) dampens this oscillation through closed-loop feedback.</em>
+</p>
 
 ---
 
-## ⚡️ Performance & Validation
+## v2.1: The Rise of Physiological AI
 
-CyberLoop is domain-agnostic. We validate its control mechanics across different problem spaces using the exact same control architecture.
+> **"Your agent doesn't need a bigger brain. It needs a better body."**
 
-### 1. Mechanism Demo: GitHub Repository Search
+**CyberLoop** is the reference implementation of **AICL (Artificial Intelligence Control Loop)**. It treats Agentic Reasoning not as a prompt engineering problem, but as a **Control Theory** problem.
 
-*(Run this locally to see the control loop in action)*
+In **v2.1**, we introduce **Semantic Kinematics**: giving agents a "vestibular system" (inner ear) to detect drift in vector space without needing to "think" (query an LLM). This allows agents to navigate complex knowledge graphs using **pure mathematics**—making them 100x faster and cheaper than traditional Chain-of-Thought agents.
 
-This demo illustrates how CyberLoop's **Inner Loop** handles exploration mechanics (narrowing/broadening) without burning LLM tokens on every step. While modern LLMs often memorize popular repos, this demo proves the **self-correcting behavior** of the framework when facing search constraints.
+---
 
-- **Query:** `"node graceful shutdown"`
-- **Mechanism:** The agent uses **Probes** as gradient signals. When a search yields 0 hits, the probe fails, triggering a deterministic strategy switch (e.g., Narrow → Broaden) without LLM intervention.
-- **Run it:** `yarn examples:github`
+## 🚀 Hero Demo: Project Ariadne
 
-| Step | Action | Logic |
-|------|--------|-------|
-| 0 | `narrow` | Initial strategy |
-| ... | ... | ... |
-| 5 | `narrow` | **Probe Failed (no-hits)**: Gradient signal detected |
-| 6 | `stop` | **Budget Exhausted**: Bounded exploration triggered |
+**Can an agent find the link between "Coffee" and the "French Revolution" without an LLM?**
 
-### 2. Industrial Case Study: Root Cause Analysis (RCA)
+Using CyberLoop v2.1, the agent navigates Wikipedia using only **Embeddings + PID Control**. It "senses" semantic proximity and "reflexively" corrects course when it drifts or gets bored.
+
+### ⚡️ Run it yourself
+
+```bash
+# 1. Install dependencies
+yarn install
+
+# 2. Run the Deep-Dive Scenario (Coffee -> French Revolution)
+yarn examples:wikipedia revolution
+
+```
+
+### 📊 Benchmark Results
+
+| Metric | Pure LLM Agent (Typical) | CyberLoop v2.1 (Actual) | Impact |
+| --- | --- | --- | --- |
+| **Decision Mechanism** | Reasoning (LLM) | **Sensing** (Vector + PID) | **Physiological** |
+| **Latency per Step** | ~3,000ms | **~50ms** | **60x Faster** |
+| **Cost per Step** | ~$0.01 | **~$0.0001** | **99% Cheaper** |
+| **Behavior** | Stochastic | **Controlled** | Reproducible |
+
+> 🔗 **See full benchmark:** [docs/benchmarks/wikipedia/benchmark-wikipedia-navigation.md](https://www.google.com/search?q=docs/benchmarks/wikipedia/benchmark-wikipedia-navigation.md)
+
+---
+
+## 🧬 Core Architecture: Mind & Body
+
+CyberLoop separates the "Thinking" (Outer Loop) from the "Moving" (Inner Loop).
+
+### 1. Inner Loop (The Body & Cerebellum)
+
+The reflexive system that handles fast, deterministic navigation and exploration. **Zero LLM calls.**
+
+* **🛡️ Probe (Sensor):**
+Low-cost feasibility checks. It asks simple questions like *"Is the result set empty?"* or *"Did the API return 404?"* to generate immediate feedback signals.
+* **🪜 Ladder (Actuator):**
+Mechanisms to regulate exploration entropy. If a probe fails, the ladder adjusts parameters (e.g., relaxing search filters, expanding candidate pools) to overcome friction.
+* **🧭 Kinematics Engine (v2.1):**
+Uses **EKF/PID controllers** to detect "Semantic Drift". If the agent's path diverges too far from the goal vector, the engine applies a "Correction Force" (Backtracking).
+* **⚡️ Reflexes & Guards:**
+Middleware for state hygiene. Includes **Line-of-Sight** (immediate action) and **Boredom Penalty** (avoiding loops).
+
+### 2. Outer Loop (The Brain / Cortex)
+
+The strategic system that handles planning, replanning, and final evaluation.
+
+* **Role:** Semantic planning and high-level judgment.
+* **Mechanism:** LLM (GPT-4o / Claude 3.5).
+* **Trigger:** Only activated when the Inner Loop budget is exhausted or a stable state is found.
+* **Cost:** Expensive, but rarely invoked.
+
+---
+
+## 📉 Industrial Validation (Legacy)
+
+Before v2.1, we validated the control loop concepts in industrial settings.
+
+### Root Cause Analysis (RCA) Case Study
 
 *(Internal Benchmark on OpenTelemetry Data)*
 
-To stress-test the framework in a high-dimensional production environment (where the answer isn't in the LLM's training set), we implemented a private **RCA Adapter** using CyberLoop to analyze distributed tracing data.
-
-Compared to a standard Tool-Using Agent (GPT-5):
+We used CyberLoop to analyze distributed tracing data in a production environment.
 
 | Metric | Standard Agent | CyberLoop (AICL) | Impact |
-| :--- | :--- | :--- | :--- |
-| **LLM Calls** | 13 calls | **2 calls** | **85% reduction** (Solved inference cost) |
-| **Execution Time** | 109s | **71s** | **34% faster** (Deterministic inner loops) |
+| --- | --- | --- | --- |
+| **LLM Calls** | 13 calls | **2 calls** | **85% reduction** |
+| **Execution Time** | 109s | **71s** | **34% faster** |
 | **Infinite Loops** | Occasional | **Zero** | Idempotency detection |
-| **Convergence** | Probabilistic | **Mathematical** | Guided by Ladder |
-
-> *Note: While the RCA domain adapter is proprietary, the underlying control logic is identical to the open-source GitHub demo.*
-
----
-
-## 🧬 Core Philosophy: Hierarchical Control
-
-We replace "Prompting" with a **System 1 / System 2** architecture:
-
-### 1. Inner Loop (Reflexive System)
-
-- **Role:** Fast, cheap, deterministic exploration.
-
-- **Cost:** ~$0.01 per step.
-- **Mechanism:** Uses **Probes** (Sensors) to detect if a path is viable, and **Ladders** to adjust exploration intensity.
-- **Key Constraint:** **Zero LLM calls allowed.**
-
-### 2. Outer Loop (Strategic System)
-
-- **Role:** Slow, expensive, semantic planning.
-
-- **Cost:** ~$0.50 per call.
-- **Mechanism:** The LLM acts as the "Controller", setting the initial strategy and evaluating the final state found by the Inner Loop.
-
-> 📖 **Read the Deep Dive:**
->
-> - [**The Whitepaper (AICL)**](./docs/whitepaper/AICL.md) - Theoretical foundation & architecture.
-> - [**Philosophy**](./docs/whitepaper/PHILOSOPHY.md) - Why Control Theory is the missing link for AGI.
 
 ---
 
@@ -89,60 +109,47 @@ We replace "Prompting" with a **System 1 / System 2** architecture:
 ### Installation
 
 ```bash
-# Clone the repository
 git clone https://github.com/roackb2/cyberloop.git
 cd cyberloop
-
-# Install dependencies
 yarn install
+
 ```
 
-### Running the Demos
+### Configuration
 
-You will need an `OPENAI_API_KEY` and a `GITHUB_TOKEN`.
+Create a `.env` file with your keys:
+
+```env
+OPENAI_API_KEY=sk-...
+
+```
+
+### Available Demos
 
 ```bash
-# 1. Run the AICL Agent (Closed Loop)
-# Watch it broaden/narrow its search based on probe feedback
+# v2.1: Wikipedia Deep-Dive (Semantic Kinematics)
+# Scenarios: 'tech' (Jacquard -> CPU) or 'revolution' (Coffee -> French Revolution)
+yarn examples:wikipedia revolution
+
+# v1.0: GitHub Search (Deterministic State Machine)
+# A classic example of bounded exploration using Probes & Ladders
 yarn examples:github
 
-# 2. Run the Baseline Comparison
-# Compare results with a standard "flat" agent
-yarn examples:github:baseline
 ```
 
 ---
 
-## 🏗️ Architecture & Modules
+## 📂 Documentation
 
-CyberLoop is built on modular, swappable interfaces.
-
-| Module | Role | Loop Layer |
-|--------|------|------|
-| `Environment` | Provides observable states and executes actions | Both |
-| `ProbePolicy` | **Deterministic** decision logic based on probe signals | **Inner** |
-| `Probe` | Low-cost feasibility checks (e.g., "Is result set empty?") | **Inner** |
-| `Ladder` | Regulates exploration entropy (Relaxation Gradient) | **Inner** |
-| `Planner` | LLM-based strategy and final evaluation | **Outer** |
-| `BudgetTracker`| Hard constraints on token/step usage | Both |
-
-See [**Inner/Outer Loop Architecture**](./docs/architecture/inner-outer-loop.md) for the detailed sequence diagram.
+* **Benchmarks:** [Wikipedia Navigation Results](https://www.google.com/search?q=docs/benchmarks/wikipedia/benchmark-wikipedia-navigation.md)
+* **Theory:** [AICL Whitepaper](https://www.google.com/search?q=./docs/whitepaper/AICL.md)
+* **Architecture:** [Inner/Outer Loop Spec](https://www.google.com/search?q=./docs/architecture/inner-outer-loop.md)
 
 ---
 
-## 📂 Documentation Index
-
-- **Theory:** [AICL Whitepaper](./docs/whitepaper/AICL.md) | [Philosophy](./docs/whitepaper/PHILOSOPHY.md)
-- **Design:** [Engineering Guardrails](./docs/architecture/ENGINEERING_GUARDRAILS.md) | [Trace Spec](./docs/architecture/RUNTIME_TRACE_SPEC.md)
-- **Applications:** [Use Cases Appendix](./docs/architecture/use-cases-appendix.md) (RCA, Code Search, Knowledge Retrieval)
-- **Academic:** [Zenodo Record](https://zenodo.org/records/17835680) (Cite as Liang, 2025)
-
----
-
-> **Status:** 🧩 *Work in Progress (Research Preview)*
->
+> **Status:** 🧪 *v2.1 Research Preview*
 > Uncontrolled intelligence grows powerful but fragile.
 > Controlled intelligence grows stable — and endures.
 
-📜 Licensed under the [Apache 2.0 License](./LICENSE)
-© 2025 Jay / Fienna Liang (<roackb2@gmail.com>)
+📜 Licensed under the [Apache 2.0 License](https://www.google.com/search?q=./LICENSE)
+© 2025 Jay / Fienna Liang ([roackb2@gmail.com](mailto:roackb2@gmail.com))
