@@ -15,6 +15,28 @@ import { PIDController } from '../../core/kinematics/pid';
 import { KinematicProbePolicy } from '../../core/kinematics/policy';
 import { Orchestrator } from '../../core/orchestrator';
 
+interface Scenario {
+  name: string;
+  start: string;
+  end: string;
+  description: string;
+}
+
+const SCENARIOS: Record<string, Scenario> = {
+  'tech': {
+    name: 'tech',
+    start: 'Jacquard machine',
+    end: 'Central processing unit',
+    description: 'The classic loom to computer evolution path'
+  },
+  'revolution': {
+    name: 'revolution',
+    start: 'Coffee',
+    end: 'French Revolution',
+    description: 'From caffeine to guillotine'
+  }
+};
+
 // Main Demo
 async function main() {
   logger.info("🚀 Starting Project Ariadne: Wikipedia Deep-Dive Agent");
@@ -24,14 +46,26 @@ async function main() {
     process.exit(1);
   }
 
+  // Scenario Selection
+  const args = process.argv.slice(2);
+  const scenarioKey = args[0] || 'tech';
+  const scenario = SCENARIOS[scenarioKey];
+
+  if (!scenario) {
+    logger.error(`❌ Unknown scenario: ${scenarioKey}`);
+    logger.info(`Available scenarios: ${Object.keys(SCENARIOS).join(', ')}`);
+    process.exit(1);
+  }
+
+  logger.info(`📖 Scenario: ${scenario.name} - ${scenario.description}`);
+  logger.info(`🎯 Goal: ${scenario.start} -> ${scenario.end}`);
+
   const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
   });
 
-  const startTopic = "Jacquard machine";
-  const endTopic = "Central processing unit";
-
-  logger.info(`🎯 Goal: ${startTopic} -> ${endTopic}`);
+  const startTopic = scenario.start;
+  const endTopic = scenario.end;
 
   // 1. Setup Embedder & Goal
   const embedder = new WikipediaEmbedder(openai);
@@ -78,7 +112,7 @@ async function main() {
     evaluator,
     ladder,
     budget: createControlBudget(100, 100),
-    maxInnerSteps: 20,
+    maxInnerSteps: 50, // Increased for longer paths
     logger
   });
 

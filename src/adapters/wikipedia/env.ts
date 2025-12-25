@@ -108,6 +108,11 @@ export class WikipediaEnv implements Environment<WikiState, WikiAction> {
         };
       } else {
         logger.error(`[WikipediaEnv] Failed to fetch ${action.title}, staying put.`);
+        // Add broken link to blacklist to prevent infinite retries
+        this.currentState = {
+          ...this.currentState,
+          blacklist: [...(this.currentState.blacklist || []), action.title]
+        };
       }
       return this.currentState;
     }

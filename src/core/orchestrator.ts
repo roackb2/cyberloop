@@ -219,7 +219,16 @@ export class Orchestrator<S = State, A = Action, F = Feedback, D = ProbeData, R 
       })
 
       // Debug logging
-      const stateInspection = this.probes[0]?.inspectState?.(state) ?? JSON.stringify(state)
+      const stateInspection = this.probes[0]?.inspectState?.(state) ?? JSON.stringify(state, (key, value: unknown) => {
+        if (key === 'summary' && typeof value === 'string' && value.length > 150) {
+          return value.substring(0, 150) + '... (truncated)'
+        }
+        // Also truncate vectors in state if any
+        if (Array.isArray(value) && value.length > 5 && typeof value[0] === 'number') {
+          return `[Vector(${value.length})]`
+        }
+        return value
+      })
       this.logger?.info(stateInspection, `[Inner Loop t=${t}], stable=${isStable}, budget=${this.budget.innerLoop.remaining().toFixed(2)}`)
 
       if (isStable) {
