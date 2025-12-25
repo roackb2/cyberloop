@@ -18,6 +18,8 @@ import { Orchestrator } from '../../core/orchestrator';
 import { ChainPolicy } from '../../core/policy/chain';
 import { BlacklistGuard } from '../../core/policy/guards/blacklist';
 import { BoredomGuard } from '../../core/policy/guards/boredom';
+import { LineOfSightReflex } from '../../core/policy/reflexes/line-of-sight';
+import { SoftLandingReflex } from '../../core/policy/reflexes/soft-landing';
 
 interface Scenario {
   name: string;
@@ -86,11 +88,20 @@ async function main() {
   // 2. Setup Policies
   const basePolicy = new GreedyWikiPolicy(embedder, goalEmbedding);
 
-  // Wrap base policy with Guards
-  const innerPolicy = new ChainPolicy<WikiState, WikiAction, number>(basePolicy, [
-    new BlacklistGuard<WikiState>(),
-    new BoredomGuard<WikiState>()
-  ]);
+  // Wrap base policy with Guards and Reflexes
+  const innerPolicy = new ChainPolicy<WikiState, WikiAction, number>(
+    basePolicy,
+    // Guards (Modify State)
+    [
+      new BlacklistGuard<WikiState>(),
+      new BoredomGuard<WikiState>()
+    ],
+    // Reflexes (Priority Override)
+    [
+      new LineOfSightReflex(),
+      new SoftLandingReflex(embedder, goalEmbedding)
+    ]
+  );
 
   const kinematics = new PhysicsEngine({
     ProcessNoise: 0.1,

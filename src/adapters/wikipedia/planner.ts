@@ -68,11 +68,42 @@ Return JSON:
     return `Navigation Complete.\nPath: ${path} -> ${state.currentTitle}\nGoal: ${state.goal}`;
   }
 
-  async replan(_state: WikiState, _history: WikiState[]): Promise<WikiState | null> {
-    logger.info('[Planner] Replanning...');
-    // In a real agent, we might change the goal or restart
-    // For now, we return null to stop (or maybe backstep?)
-    await Promise.resolve(); // Satisfy linter
-    return null;
+  async replan(state: WikiState, history: WikiState[]): Promise<WikiState | null> {
+    logger.info('[Planner] ⚠️ Inner Loop exhausted. Initiating Strategic Retreat.');
+
+    // 1. Check if we have history to retrace
+    // If state.history is empty, we haven't moved from start, so we can't retreat.
+    if (!state.history || state.history.length === 0) {
+      logger.error('[Planner] No history to retrace. Cannot replan.');
+      return null;
+    }
+
+    // 2. Strategy: Return to the Origin (Root Cause)
+    // We use the full trajectory history to find the true start state.
+    // history[0] is the initial state of the loop.
+    const originalStart = history.length > 0 ? history[0].currentTitle : state.history[0];
+
+    // 3. Inherit "Painful Memories" (Blacklist)
+    // Preserve explored failures (blacklist) so Greedy Policy doesn't retry them.
+    // Also blacklist the current dead-end (currentTitle).
+    const newBlacklist = new Set(state.blacklist || []);
+    newBlacklist.add(state.currentTitle);
+
+    logger.info(`[Planner] 🔄 Teleporting back to start: "${originalStart}". Preserving ${newBlacklist.size} blacklisted items.`);
+
+    // 4. Hydrate the initial state (ensure links are fresh)
+    const pageData = await fetchWikiPage(originalStart);
+    if (!pageData) return null;
+
+    return {
+      ...state,
+      ...pageData, // Reset title, summary, links
+      currentTitle: pageData.currentTitle!,
+      history: [], // Clear history, clean slate
+      depth: 0,    // Reset depth
+      blacklist: Array.from(newBlacklist), // Keep the memory of failures
+      candidateWeights: {}, // Reset weights (clear boredom)
+      lastLinkClicked: undefined
+    };
   }
 }
