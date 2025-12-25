@@ -1,7 +1,7 @@
 # 🧠 CyberLoop
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](./LICENSE)
-[![DOI](https://zenodo.org/badge/1072923533.svg)](https://doi.org/10.5281/zenodo.18051816)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.17835643.svg)](https://doi.org/10.5281/zenodo.17835643)
 [![PR Checks](https://github.com/roackb2/cyberloop/actions/workflows/pr-checks.yml/badge.svg?branch=main)](https://github.com/roackb2/cyberloop/actions/workflows/pr-checks.yml)
 
 <p align="center">
