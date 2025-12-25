@@ -55,7 +55,6 @@ export class KinematicProbePolicy<S extends State, A extends Action, F extends F
     // 2. Update Physics Engine
     // We pass the previous state and the NEW observation
     const { next, error } = this.engine.update(this.lastPhysicsState, observation, this.origin);
-    this.lastPhysicsState = next;
 
     // 3. Compute PID Correction
     const correction = this.pid.compute(error);
@@ -63,6 +62,8 @@ export class KinematicProbePolicy<S extends State, A extends Action, F extends F
     // 4. Control Logic
     if (correction.isStable) {
       // If physics is stable (flying straight), delegate to domain logic
+      // Only update internal physics state if we accept the move
+      this.lastPhysicsState = next;
       return this.innerPolicy.decide(state, ladder);
     } else {
       // INTERVENTION: Semantic Whiplash Detected

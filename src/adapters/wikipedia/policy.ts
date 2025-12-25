@@ -32,9 +32,31 @@ export class GreedyWikiPolicy implements ProbePolicy<WikiState, WikiAction, numb
     }
 
     // 1. Filter links (Optimization: limit to first 20 or random subset to save embedding costs)
+    // Filter out meta-namespaces AND blacklist AND visited
+    const blacklist = new Set(state.blacklist || []);
+    const history = new Set(state.history || []);
+
+    const validLinks = state.links.filter(link =>
+      !link.startsWith('Wikipedia:') &&
+      !link.startsWith('Template:') &&
+      !link.startsWith('Category:') &&
+      !link.startsWith('Help:') &&
+      !link.startsWith('Portal:') &&
+      !link.startsWith('Talk:') &&
+      !link.startsWith('Special:') &&
+      !link.startsWith('File:') &&
+      !blacklist.has(link) &&
+      !history.has(link)
+    );
+
+    if (validLinks.length === 0) {
+      logger.warn("[GreedyWikiPolicy] Dead end after filtering! No valid links found.");
+      return { type: 'DONE', result: "Dead End (Filtered)" };
+    }
+
     // For demo, let's take a random sample of 10 links + 5 likely ones?
     // Or just first 15.
-    const candidates = state.links.slice(0, 15);
+    const candidates = validLinks.slice(0, 50);
 
     logger.debug(`[GreedyWikiPolicy] Evaluating ${candidates.length} candidates...`);
 

@@ -10,6 +10,8 @@ export interface WikiState {
   depth: number;
   // Available links for next move
   links: string[];
+  blacklist?: string[];
+  lastLinkClicked?: string;
 }
 
 export type WikiAction =

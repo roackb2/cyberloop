@@ -233,7 +233,15 @@ export class Orchestrator<S = State, A = Action, F = Feedback, D = ProbeData, R 
 
       // Probe policy decides next action (deterministic, no LLM!)
       const action = await this.probePolicy.decide(state, this.ladder)
-      this.logger?.info(`[Inner Loop t=${t}] Action: ${JSON.stringify(action)}`)
+
+      const logAction = JSON.stringify(action, (_key, value: unknown) => {
+        if (Array.isArray(value) && value.length > 5 && typeof value[0] === 'number') {
+          return `[Vector(${value.length})]`
+        }
+        return value
+      })
+
+      this.logger?.info(`[Inner Loop t=${t}] Action: ${logAction}`)
       this.budget.innerLoop.record(0.1) // Cheap decision cost
 
       // Apply action to environment

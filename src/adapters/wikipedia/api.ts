@@ -12,6 +12,7 @@ export async function fetchWikiPage(title: string): Promise<Partial<WikiState> |
       exintro: '1',
       explaintext: '1',
       pllimit: '500', // Max limit for non-bots
+      redirects: '1', // Auto-resolve redirects
       titles: title,
       origin: '*'
     });
@@ -30,11 +31,17 @@ export async function fetchWikiPage(title: string): Promise<Partial<WikiState> |
       return null;
     }
 
+    // Filter out technical namespaces locally to save embedding tokens and prevent traps
+    const cleanLinks = (page.links?.map(l => l.title) ?? [])
+      .filter(link => !/^(File|Template|Help|Category|Wikipedia|Portal|Talk|Special|Draft|User|MediaWiki):/i.test(link))
+      // Filter out "H:" style shortcuts which are often Help redirects
+      .filter(link => !/^[A-Z]+:[A-Z]+$/.test(link));
+
     return {
       currentTitle: page.title,
       summary: page.extract ?? '(No summary)',
       url: `https://en.wikipedia.org/wiki/${encodeURIComponent(page.title)}`,
-      links: page.links?.map(l => l.title) ?? []
+      links: cleanLinks
     };
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);

@@ -51,11 +51,11 @@ async function main() {
   const kinematics = new PhysicsEngine({
     ProcessNoise: 0.1,
     MeasureNoise: 0.5,
-    PID: { Kp: 2.0, Ki: 0.0, Kd: 0.1 }, // Aggressive correction for demo
-    MaxDeviation: 0.3 // Strict-ish
+    PID: { Kp: 0.5, Ki: 0.0, Kd: 0.1 }, // Relaxed PID to avoid killing valid "Epiphany" jumps
+    MaxDeviation: 0.6 // Relaxed Cone: Allow up to ~30-40 degrees deviation
   });
 
-  const pid = new PIDController(2.0, 0.0, 0.1, 0.3);
+  const pid = new PIDController(0.5, 0.0, 0.1, 0.6);
 
   const kinematicPolicy = new KinematicProbePolicy(
     innerPolicy,
