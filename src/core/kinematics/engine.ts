@@ -15,41 +15,40 @@ export class PhysicsEngine {
     origin: Vector3D
   ): { next: KinematicState; error: Vector3D; coherence: number } {
     // 1. Predict (Simple Motion Model: assume constant velocity)
-    // s_pred = s_prev + v_prev * dt (assume dt=1 step)
     const s_pred = add(prev.position, prev.velocity);
 
     // 2. Update (Kalman Gain)
-    // K = P / (P + R) -- Simplified scalar gain for high-dimensional conceptual space
-    // We treat process noise/measure noise as scalar ratios for stability
     const K = this.config.ProcessNoise / (this.config.ProcessNoise + this.config.MeasureNoise);
 
-    // Innovation: y = z - s_pred
+    // Innovation
     const innovation = subtract(observation, s_pred);
-
-    // s_new = s_pred + K * y
     const s_new = add(s_pred, scale(innovation, K));
-
-    // Update Velocity estimate: v_new = s_new - s_prev
     const v_new = subtract(s_new, prev.position);
 
-    // 3. Calculate Heading D_i = S_i - Origin
+    // 3. Calculate Heading
     const heading = subtract(s_new, origin);
     const prevHeading = prev.heading;
 
+    // --- SAFETY CHECK START ---
+    // Check if we have enough previous momentum to define a "path".
+    // If prevHeading is near zero, we cannot calculate angle or projection.
+    const prevHeadingNorm = norm(prevHeading);
+    const hasMomentum = prev.stepIndex > 0 && prevHeadingNorm > 1e-9;
+    // --- SAFETY CHECK END ---
+
     // 4. Calculate Coherence (Angle change)
-    // If this is the first step, coherence is perfect (0 angle)
-    const coherence = prev.stepIndex === 0 ? 0 : angleBetween(heading, prevHeading);
+    // Protected by hasMomentum to prevent NaN in angleBetween
+    const coherence = hasMomentum ? angleBetween(heading, prevHeading) : 0;
 
     // 5. Calculate Cross-track Error (Vector Rejection)
-    // error = D_i - proj_{D_{i-1}}(D_i)
-    // This represents the component of the new heading that is orthogonal to the previous momentum
     let error: Vector3D;
 
-    // Check for singularity: if prevHeading is zero (start or no movement), we cannot project onto it.
-    if (prev.stepIndex === 0 || norm(prevHeading) < 1e-9) {
-      // No previous heading to define "track", so error is zero
+    if (!hasMomentum) {
+      // No previous track to follow, so error is zero.
+      // We accept the current heading as the new truth.
       error = heading.map(() => 0);
     } else {
+      // Safe to reject because prevHeading is non-zero
       error = reject(heading, prevHeading);
     }
 
