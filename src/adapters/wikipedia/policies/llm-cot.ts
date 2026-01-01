@@ -4,6 +4,9 @@ import type { Ladder, ProbePolicy } from '../../../core/interfaces';
 import { logger } from '../telemetry';
 import type { WikiAction, WikiState } from '../types';
 
+// const model = 'gpt-4o-mini';
+const model = 'gpt-5.1';
+
 interface CoTResponse {
   reasoning: string;
   selected_link: string;
@@ -18,6 +21,7 @@ export class LlmCoTPolicy implements ProbePolicy<WikiState, WikiAction, number> 
   ) { }
 
   initialize(state: WikiState): void {
+    logger.info(`[LlmCoTPolicy] Running with model: ${model}`);
     logger.info(`[LlmCoTPolicy] Initializing stateful agent. Goal: ${state.goal}`);
     this.chatHistory = [
       {
@@ -58,10 +62,11 @@ You must strictly output JSON.
     // Limit to top 50 to fit context
     const candidates = basicValidLinks.slice(0, 50);
 
+    logger.debug(`[LlmCoTPolicy] State: ${JSON.stringify(state)}`);
+
     const prompt = `
-Current Topic: "${state.currentTitle}"
-Goal Topic: "${state.goal}"
-History: ${state.history.join(' -> ')}
+State:
+${JSON.stringify(state)}
 
 Available Links (Top 50):
 ${JSON.stringify(candidates)}
@@ -95,7 +100,7 @@ JSON Format:
 
     try {
       const response = await this.openai.chat.completions.create({
-        model: 'gpt-4o-mini',
+        model: model,
         messages: this.chatHistory,
         response_format: { type: 'json_object' },
         temperature: 0.2

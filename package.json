@@ -47,8 +47,7 @@
     "examples:quickstart": "tsx src/examples/quickstart.ts",
     "examples:github": "tsx src/examples/github/agent-demo.ts",
     "examples:github:baseline": "tsx src/examples/github/baseline-demo.ts",
-    "examples:wikipedia": "tsx src/examples/wikipedia/demo.ts",
-    "examples:wikipedia:baseline": "tsx src/examples/wikipedia/baseline-agent.ts"
+    "examples:wikipedia": "tsx src/examples/wikipedia/demo.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9.37.0",

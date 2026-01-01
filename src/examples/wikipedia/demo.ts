@@ -168,7 +168,7 @@ async function main() {
     evaluator,
     ladder,
     budget: createControlBudget(100, 100),
-    maxInnerSteps: 30, // Increased for longer paths
+    maxInnerSteps: 15,
     logger
   });
 

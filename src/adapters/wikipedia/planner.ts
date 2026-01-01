@@ -71,6 +71,12 @@ Return JSON:
   async replan(state: WikiState, history: WikiState[]): Promise<WikiState | null> {
     logger.info('[Planner] ⚠️ Inner Loop exhausted. Initiating Strategic Retreat.');
 
+    // Note: For the Wikipedia demo, we want to run only inner loops
+    // and stop when budget is exhausted.
+    // This compares the inner loop performance of different policies.
+    // Remove this and the remaining code will run the replan logic.
+    throw new Error('[Planner] Immediate stop for experiment comparison');
+
     // 1. Check if we have history to retrace
     // If state.history is empty, we haven't moved from start, so we can't retreat.
     if (!state.history || state.history.length === 0) {
@@ -98,7 +104,7 @@ Return JSON:
     return {
       ...state,
       ...pageData, // Reset title, summary, links
-      currentTitle: pageData.currentTitle!,
+      currentTitle: pageData?.currentTitle ?? '',
       history: [], // Clear history, clean slate
       depth: 0,    // Reset depth
       blacklist: Array.from(newBlacklist), // Keep the memory of failures
