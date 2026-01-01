@@ -26,7 +26,20 @@ export class PhysicsEngine {
     const v_new = subtract(s_new, prev.position);
 
     // 3. Calculate Heading
-    const heading = subtract(s_new, origin);
+    // Empirical decision: Use Local Velocity (Instantaneous Momentum) instead of Global Heading.
+    // Experiments showed that Global Heading causes "semantic inertia," trapping agents in
+    // obsolete contexts (e.g., hardware history vs modern CPU). Local Velocity allows
+    // the agent to "forget the past" and exploit hub nodes more effectively.
+
+    let heading = v_new;
+
+    // Fallback: If velocity is near zero (no local movement), use global direction
+    // to maintain orientation towards the origin/target context.
+    // For t=0, v_new is equivalent to (s_new - origin), so this handles start gracefully.
+    if (norm(heading) < 1e-9) {
+      heading = subtract(s_new, origin);
+    }
+
     const prevHeading = prev.heading;
 
     // --- SAFETY CHECK START ---

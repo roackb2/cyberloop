@@ -1,0 +1,174 @@
+yarn run v1.22.22
+$ tsx src/examples/wikipedia/demo.ts
+[16:31:07.656] INFO (88859): 🚀 Starting Project Ariadne: Wikipedia Deep-Dive Agent
+[16:31:07.656] INFO (88859): 📖 Scenario: tech - The classic loom to computer evolution path
+[16:31:07.656] INFO (88859): 🎯 Goal: Jacquard machine -> Central processing unit
+[16:31:07.657] INFO (88859): 🧠 Embedding Goal...
+[16:31:09.746] INFO (88859):
+[Outer Loop] Calling planner.plan()...
+[16:31:09.747] INFO (88859): [Planner] Planning trajectory for: "Jacquard machine -> Central processing unit"
+[16:31:11.467] INFO (88859): [Planner] Parsed route
+    parsed: {
+      "source": "Jacquard machine",
+      "target": "Central processing unit"
+    }
+[16:31:11.467] INFO (88859): [Planner] Hydrating initial state for: Jacquard machine...
+[16:31:12.164] INFO (88859): [Outer Loop] Initial state
+    currentTitle: "Jacquard machine"
+    summary: "The Jacquard machine (French: [ʒakaʁ]) is a device fitted to a loom that simplifies the process of manufacturing textiles with such complex patterns as brocade, damask and matelassé. The resulting ensemble of the loom and Jacquard machine is then called a Jacquard loom. The machine was patented by Joseph Marie Jacquard in 1804, based on earlier inventions by the Frenchmen Basile Bouchon (1725), Jean Baptiste Falcon (1728), and Jacques Vaucanson (1740). The machine was controlled by a \"chain of cards\"; a number of punched cards laced together into a continuous sequence. Multiple rows of holes were punched on each card, with one complete card corresponding to one row of the design. \nBoth the Jacquard process and the necessary loom attachment are named after their inventor. This mechanism is probably one of the most important weaving innovations, as Jacquard shedding made possible the automatic production of unlimited varieties of complex pattern weaving. The term \"Jacquard\" is not specific or limited to any particular loom, but rather refers to the added control mechanism that automates the patterning. The process can also be used for patterned knitwear and machine-knitted textiles such as jerseys.\nThis use of replaceable punched cards to control a sequence of operations is considered an important step in the history of computing hardware, having inspired Charles Babbage's Analytical Engine."
+    url: "https://en.wikipedia.org/wiki/Jacquard%20machine"
+    goal: "Central processing unit"
+    history: []
+    depth: 0
+    links: [
+      "1890 U.S. Census",
+      "Acesas",
+      "Ada Dietz",
+      "Air-jet loom",
+      "Alphonse de Lamartine",
+      "Analytical Engine",
+      "Anni Albers",
+      "Bancroft Shed",
+      "Band weaving",
+      "Barber-Colman knotter",
+      "Basile Bouchon",
+      "Basketweave (weaving)",
+      "Beamer (occupation)",
+      "Braid",
+      "Brigitta Scherzenfeldt",
+      "Brocade",
+      "Calabria",
+      "Catanzaro",
+      "Charles Babbage",
+      "Charvet (fabric)",
+      "Chilkat weaving",
+      "Clara Sherman",
+      "Coast Salish weaving",
+      "Computer programming",
+      "Computing",
+      "Damask",
+      "Dandy loom",
+      "Dobby (cloth)",
+      "Dobby loom",
+      "Doi (identifier)",
+      "Dorothy Liebes",
+      "Double cloth",
+      "Drawloom",
+      "Elisabeth Forsell",
+      "Emanuel Anthony Posselt",
+      "Engineering drawing",
+      "Ethel Mairet",
+      "Even-weave",
+      "Factory",
+      "Fingerweaving",
+      "Flying shuttle",
+      "Gabardine",
+      "Gunta Stölzl",
+      "Hattersley loom",
+      "Heddle",
+      "Herman Hollerith",
+      "History of computing hardware",
+      "Horrocks loom",
+      "IBM Automatic Sequence Controlled Calculator",
+      "ISBN (identifier)",
+      "ISSN (identifier)",
+      "Ikat",
+      "International Business Machine",
+      "International Textile Machinery Association exhibition",
+      "Italy",
+      "Jacquard loom",
+      "Jacques Vaucanson",
+      "Jersey (fabric)",
+      "Johanna Brunsson",
+      "John Rylands",
+      "Joseph Marie Jacquard",
+      "Judocus de Vos",
+      "Kasuri",
+      "Kissing the shuttle",
+      "Lampas",
+      "Lancashire Loom",
+      "Leno weave",
+      "Lilly Reich",
+      "Linda Hall Library",
+      "Linen",
+      "Loom",
+      "Louis XI",
+      "Lyon",
+      "Machine",
+      "Margaretha Reichardt",
+      "Margaretha Zetterberg",
+      "Maria Elisabet Öberg",
+      "Matelassé",
+      "Mechanism (technology)",
+      "Micheline Beauchemin",
+      "Milan",
+      "More looms",
+      "Navajo weaving",
+      "Northrop Loom",
+      "OCLC (identifier)",
+      "Otti Berger",
+      "Oxford (cloth)",
+      "Pasteboard",
+      "Pibiones",
+      "Piece-rate list",
+      "Pile weave",
+      "Piqué (weaving)",
+      "Plain weave",
+      "Plugboard",
+      "Power loom",
+      "Punched card",
+      "Punched cards",
+      "Queen Street Mill",
+      "Rapier loom",
+      "Reed (weaving)",
+      "Resin wicker",
+      "Roberts Loom",
+      "Satin",
+      "Shed (weaving)",
+      "Shot silk",
+      "Shuttle (weaving)",
+      "Silk",
+      "Sizing",
+      "Swivel weave",
+      "Tablet weaving",
+      "Talim (textiles)",
+      "Tapestry",
+      "Temple (weaving)",
+      "Textile",
+      "Textile sizing machine",
+      "Textiles",
+      "Thomas Ferguson & Co Ltd",
+      "Twill",
+      "Tāniko",
+      "Unit record equipment",
+      "Vaucanson",
+      "Warp-weighted loom",
+      "Warp (weaving)",
+      "Warp and weft",
+      "Water-jet loom",
+      "Wattle (construction)",
+      "Wayback Machine",
+      "Weaving",
+      "Weft",
+      "Wicker",
+      "Woven coverlet",
+      "Yarn",
+      "Template talk:Weaving"
+    ]
+[16:31:12.164] INFO (88859): [Outer Loop] ProbePolicy initialized
+
+[16:31:12.165] INFO (88859): {"currentTitle":"Jacquard machine","summary":"The Jacquard machine (French: [ʒakaʁ]) is a device fitted to a loom that simplifies the process of manufacturing textiles with such complex patterns a... (truncated)","url":"https://en.wikipedia.org/wiki/Jacquard%20machine","goal":"Central processing unit","history":[],"depth":0,"links":["1890 U.S. Census","Acesas","Ada Dietz","Air-jet loom","Alphonse de Lamartine","Analytical Engine","Anni Albers","Bancroft Shed","Band weaving","Barber-Colman knotter","Basile Bouchon","Basketweave (weaving)","Beamer (occupation)","Braid","Brigitta Scherzenfeldt","Brocade","Calabria","Catanzaro","Charles Babbage","Charvet (fabric)","Chilkat weaving","Clara Sherman","Coast Salish weaving","Computer programming","Computing","Damask","Dandy loom","Dobby (cloth)","Dobby loom","Doi (identifier)","Dorothy Liebes","Double cloth","Drawloom","Elisabeth Forsell","Emanuel Anthony Posselt","Engineering drawing","Ethel Mairet","Even-weave","Factory","Fingerweaving","Flying shuttle","Gabardine","Gunta Stölzl","Hattersley loom","Heddle","Herman Hollerith","History of computing hardware","Horrocks loom","IBM Automatic Sequence Controlled Calculator","ISBN (identifier)","ISSN (identifier)","Ikat","International Business Machine","International Textile Machinery Association exhibition","Italy","Jacquard loom","Jacques Vaucanson","Jersey (fabric)","Johanna Brunsson","John Rylands","Joseph Marie Jacquard","Judocus de Vos","Kasuri","Kissing the shuttle","Lampas","Lancashire Loom","Leno weave","Lilly Reich","Linda Hall Library","Linen","Loom","Louis XI","Lyon","Machine","Margaretha Reichardt","Margaretha Zetterberg","Maria Elisabet Öberg","Matelassé","Mechanism (technology)","Micheline Beauchemin","Milan","More looms","Navajo weaving","Northrop Loom","OCLC (identifier)","Otti Berger","Oxford (cloth)","Pasteboard","Pibiones","Piece-rate list","Pile weave","Piqué (weaving)","Plain weave","Plugboard","Power loom","Punched card","Punched cards","Queen Street Mill","Rapier loom","Reed (weaving)","Resin wicker","Roberts Loom","Satin","Shed (weaving)","Shot silk","Shuttle (weaving)","Silk","Sizing","Swivel weave","Tablet weaving","Talim (textiles)","Tapestry","Temple (weaving)","Textile","Textile sizing machine","Textiles","Thomas Ferguson & Co Ltd","Twill","Tāniko","Unit record equipment","Vaucanson","Warp-weighted loom","Warp (weaving)","Warp and weft","Water-jet loom","Wattle (construction)","Wayback Machine","Weaving","Weft","Wicker","Woven coverlet","Yarn","Template talk:Weaving"]}
+[16:31:14.748] DEBUG (88859): [GreedyWikiPolicy] Evaluating 50 candidates...
+[16:31:17.743] INFO (88859): [GreedyWikiPolicy] Selected: History of computing hardware (Score: 0.3478, Raw: 0.3478, Weight: 1.00)
+[16:31:17.743] INFO (88859): [Inner Loop t=0] Action: {"type":"NAVIGATE","title":"History of computing hardware"}
+[16:31:17.743] INFO (88859): [CyberLoop] 🧭 Navigating to: History of computing hardware
+[16:31:21.777] DEBUG (88859): [Evaluator] Delta: 0.0627 (Prev: 0.1780 -> Next: 0.2407)
+[16:31:21.778] INFO (88859): {"currentTitle":"History of computing hardware","summary":"The history of computing hardware spans the developments from early devices used for simple calculations to today's complex computers, encompassing ad... (truncated)","url":"https://en.wikipedia.org/wiki/History%20of%20computing%20hardware","goal":"Central processing unit","history":["History of computing hardware"],"depth":1,"links":["1890 United States census","32-bit computing","8-bit computing","A. N. Whitehead","AN/FSQ-7 Combat Direction Central","AN/FSQ-8 Combat Control Central","APEXC","ASIN (identifier)","AVIDAC","A Symbolic Analysis of Relay and Switching Circuits","Abacus","Aberdeen Proving Ground","Action at a distance","Ada Lovelace","Al-Biruni","Al-Zarqali","Alan M. Turing","Alan Turing","Alban William Housego Phillips","Algorithm","Allen Coombs","Allen Newell","Allies of World War II","Altair 8800","American Antiquarian Society","American Telephone & Telegraph Company","An Wang","Analog computer","Analogue computer","Analytical Engine","Analytical engine","Ancient Discoveries","André Truong Trong Thi","Annals of the History of Computing","Antikythera mechanism","Apollo Guidance Computer","Apple I","Apple II","ArXiv (identifier)","Arithmetic","Arithmetic logic unit","Arithmometer","Arthur Pollen","Arthur W. Burks","Astrolabe","Astronomical Journal","Astronomical clock","Atanasoff–Berry Computer","Atlas (computer)","Atlas Supervisor","Atomic Energy Research Establishment","Automatic Computing Engine","Automaton","BASIC","BESK","BESM-6","BRLESC","Baboon","Babylonia","Ball-and-disk integrator","Ballistics Research Laboratory","Banū Mūsā brothers","Basile Bouchon","Bell Labs","Bell Punch","Bi-quinary coded decimal","Bibcode (identifier)","Bill of lading","Binary-coded decimal","Binary adder","Binary data","Binary number","Binary numeral system","Bipolar junction transistor","Bit","Blaise Pascal","Bletchley Park","Blu-ray","Bob Bemer","Bomba (cryptography)","Bombe","Bombsight","Bone tool","Book of Ingenious Devices","Boolean algebra","Boolean algebra (logic)","Boolean logic","Branch (computer science)","Brian","Brian Randell","British Computer Society","British Tabulating Machine Company","Brookings Institution","Bull Gamma 3","Burroughs large systems","Bus (computing)","CDC 6600","CDC 7600","CERN","CERN httpd","CMOS","CSIRAC","Cache memory","Calculator","Cambridge University Press","Cart","Castle clock","Cathode-ray tube","Celluloid","Central processing unit","Cf.","Character encoding","Charles Babbage","Charles Sanders Peirce","Charles Xavier Thomas","CiteSeerX (identifier)","Claude Shannon","Clock rate","Clock tower","Colossus computer","Columbia University","Commodore PET","Compact disc","Computer","Computer History Museum","Computer case","Computer data storage","Computer hardware","Computer keyboard","Computer memory","Computer monitor","Computer mouse","Computer port (hardware)","Computer processor","Computer program","Computer programming","Computer science","Computer speakers","Computing","Content-addressable memory","Control Data Corporation","Coriolis effect","Cornell University","Counting house","Counting rods","Course Setting Bomb Sight","Cromemco","Cryptologist","Curt Herzstark","Curta","Curta calculator","Cyclone (computer)","DASK","DBLP","DRAM","DVD","Dagstuhl","Datamation","David Caminer","David Reynolds (English historian)","Dawon Kahng","Decimal","Decimal computer","Decision problem","Dekatron","Delay-line memory","Denise Schmandt-Besserat","Diccionario enciclopédico hispano-americano de literatura, ciencias y artes","Die (integrated circuit)","Difference Engine","Difference engine","Differential analyser","Differential analyzer","Digital Visual Interface","Digital circuit","Digital computer","Digital electronics","Diode","Discrete device","Disk pack","Disk storage","DisplayPort","Doi (identifier)","Dollis Hill","Donald Knuth","Donald Routledge Hill","Drift Sight","Drum memory","Dynamic RAM","EDSAC","EDSAC 2","EDVAC","EEPROM","ENIAC","EPROM","ES-2701","Earth","Eckert–Mauchly Computer Corporation","Ed Pegg Jr.","Edmund Gunter","Elbrus (computer)","Eleanor Robson","Electrical network","Electrochemical Society","Electromechanical","Electromechanics","Electronic circuit","Electronic engineer","Electronic visual display","Electronics","Electronika SS VLSI","Embedded system","Encipher","Engineering Research Associates","England","Enigma (machine)","Enigma machine","Entscheidungsproblem","Equatorium","Ernst Schröder (mathematician)","Eswatini","Ethernet","Excess-3","Expansion card","Expression (mathematics)","FACIT EDB","FACOM","FACOM 201","FLOPS","FUJIC","Fairchild Semiconductor","Fairchild Semiconductor Corporation","Fax modem","Federico Faggin","Ferranti","Ferranti Mark 1","Fertile Crescent","Fetch-execute cycle","Fibula","Film stock","Finger-counting","Fire-control system","Firmware","First Draft of a Report on the EDVAC","Fixed disk","Flash memory","Flip-flop (electronics)","Floating-gate MOSFET","Floating-point","Floating-point arithmetic","Floating-point unit","Floppy disk","Four-Phase Systems","François Gernelle","Frederic Calland Williams","Frederic Charles Dreyer","Friden, Inc.","Friden Flexowriter","GCHQ","Game controller","Game port","Garrett AiResearch","Gaspard-Gustave Coriolis","General Post Office","Geoffrey Dummer","George Boole","George Stibitz","Germanium","Germany","Gian-Carlo Rota","Glossary of computer science","Gordon Bell","Gordon Welchman","Gottfried Leibniz","Gottfried Wilhelm Leibniz","Government Code and Cypher School","Graphics card","Graphics processing unit","Graphics tablet","Groupe Bull","Guidobaldo del Monte","Gun laying","Gunter's scale","HDMI","Halting problem","Hannover Messe","Hard disk drive","Harold Keen","Harry Wimperis","Harvard Mark I","Harvard Mark II","Harvard Mark III","Harvard Mark IV","Harvard University","Harwell, Oxfordshire","Harwell CADET","Hdl (identifier)","Heath Robinson (codebreaking machine)","Hellenistic world","Helmut Hölzer","Herbert A. Simon","Herman Goldstine","Herman Hollerith","Hero of Alexandria","Hertz","History Channel","History of Unix","History of artificial intelligence","History of cloud computing","History of compiler construction","History of computer hardware in Bulgaria","History of computer hardware in Eastern Bloc countries","History of computer hardware in Yugoslavia","History of computer science","History of computing","History of computing hardware (1960s–present)","History of computing in Poland","History of computing in Romania","History of computing in South America","History of computing in the Soviet Union","History of free and open-source software","History of general-purpose CPUs","History of laptops","History of operating systems","History of personal computers","History of programming languages","History of software","History of software configuration management","History of software engineering","History of supercomputing","History of the Internet","History of the World Wide Web","History of the graphical user interface","History of video games","Hot plugging","Human computer","Hybrid circuit","Hybrid computer","Hybrid integrated circuit","Hydraulic","Hydropower","IAS machine","IBM","IBM 1401","IBM 305 RAMAC","IBM 610","IBM 650","IBM 701","IBM 702","IBM 7030 Stretch","IBM 704","IBM 705","IBM 709","IBM SSEC","IBM Solid Logic Technology","IBM Thomas J. Watson Research Center","IEEE 1394","IEEE Annals of the History of Computing","IEEE Spectrum","ILLIAC","ILLIAC I","ILLIAC II","ILLIAC III","ILLIAC IV","ISBN (identifier)","ISSN (identifier)","IT History Society","Image scanner","Imperial Russian Navy","Index register","Industrial Revolution","Information Age","Information science","Input/output","Input device","Institute of Electrical and Electronics Engineers","Instructions per second","Integer (computer science)","Integrated circuit","Intel","Intel 4004","Intel 8080","Intel MCS-48","International Business Machines","International Federation for the Promotion of Mechanism and Machine Science","Invasion of Normandy","Iowa State University","Ishango bone","Islamic astronomy","Ismail al-Jazari","J. Lyons and Co.","J. Presper Eckert","JOHNNIAC","JSTOR (identifier)","Jack Copeland","Jack Howlett","Jack Kilby","Jacquard loom","Jacquard machine","James Thomson (engineer)","Jean Hoerni","Job (software)","John Backus","John J. McCusker","John Mauchly","John Napier","John von Neumann","Joseph Desch","Joseph Marie Jacquard","Journal de Mathématiques Pures et Appliquées","Journal of Contemporary History","KIM-1","Kelvin","Keypunch","Kibibyte","Kilowatt","Konrad Zuse","Kurt Gödel","LEO (computer)","LEO computer","Large-scale integration","Lebombo bone","Leibniz wheel","Leon E. Truesdell","Leonardo Torres Quevedo","Leslie Comrie","Lewis Fry Richardson","Light pen","List of UNIVAC products","List of pioneers in computer science","List of transistorized computers","List of vacuum-tube computers","Logarithm","Logic gate","Logic gates","Logician","Lord Kelvin","Lorenz SZ 40/42","Lorenz cipher","MANIAC I","MANIAC II","MISTIC","MIT","MOSFET","MOSFET scaling","MOS integrated circuit","MOS memory","MP944","MUSASINO-1","Magnetic-core memory","Magnetic-tape data storage","Magnetic core","Magnetic cores","Mainframe computer","Manchester Baby","Manchester Mark 1","Manchester computers","Marchant Calculator","Marcian Hoff","Marian Rejewski","Mark XIV bomb sight","Mars (computer)","Masatoshi Shima","MathWorld","Maurice Vincent Wilkes","Maurice Wilkes","Max Newman","Mean time between failures","Mechanical calculator","Mechanical computer","Mechanical counter","Mechanics","Mechanism and Machine Theory","Meg (computer)","Melvyn P. Leffler","Memory card","Memory cell (computing)","Mersenne prime","Metropolitan-Vickers","Metrovick 950","Michael Smith (newspaper reporter)","Micral","Microcode","Microcomputer","Microcontroller","Microphone","Microprocessor","Military intelligence","Miniaturization","Ministry of Defence (United Kingdom)","Mobile computing","Mobile phone","Model K (calculator)","Mohamed M. Atalla","Monolithic integrated circuit","Monroe Calculator Company","Moore's law","Moore School of Electrical Engineering","Morgan Kaufmann","Motherboard"],"blacklist":[],"lastLinkClicked":"History of computing hardware"}
+[16:31:22.847] INFO (88859): [Reflex] 🎯 Line of Sight! Found goal link "Central processing unit". Priority Override.
+[16:31:22.847] INFO (88859): [Inner Loop t=1] Action: {"type":"NAVIGATE","title":"Central processing unit"}
+[16:31:22.847] INFO (88859): [CyberLoop] 🧭 Navigating to: Central processing unit
+[16:31:24.666] DEBUG (88859): [Evaluator] Delta: 0.4460 (Prev: 0.2408 -> Next: 0.6868)
+[16:31:24.666] INFO (88859): {"currentTitle":"Central processing unit","summary":"A central processing unit (CPU), also called a central processor, main processor, or just processor, is the primary processor in a given computer. Its... (truncated)","url":"https://en.wikipedia.org/wiki/Central%20processing%20unit","goal":"Central processing unit","history":["History of computing hardware","Central processing unit"],"depth":2,"links":["1-bit computing","12-bit computing","128-bit computing","16-bit computing","24-bit computing","256-bit computing","32-bit computing","4-bit computing","48-bit computing","512-bit computing","64-bit computing","8-bit computing","ACPI","AC power plugs and sockets","AFIPS","AI accelerator","AMD","AMD Accelerated Processing Unit","AMULET microprocessor","ARM architecture family","Abstract machine","Acorn tube","Adapteva","Adder (electronics)","Address decoder","Address generation unit","Addressing mode","Advanced Power Management","Alternating Turing machine","AltiVec","Analogue electronics","Antifuse","Apollo Guidance Computer","Application-specific instruction set processor","Application-specific integrated circuit","Arbitrary-precision arithmetic","Arithmetic","Arithmetic logic unit","Arithmetic operation","Arithmetic–logic unit","Arm Holdings","Array element","Asynchronous circuit","Athlon 64 X2","Atmel AVR","Audio and video interfaces and connectors","Audion","Avalanche diode","Backward-wave oscillator","Balanced ternary","Ballistic Research Laboratory","Bank switching","Barrel processor","Barrel shifter","Baseband processor","Beam deflection tube","Beam tetrode","Benchmark (computing)","Bi-quinary coded decimal","BiCMOS","Bibcode (identifier)","Binary decoder","Binary multiplier","Binary numeral system","Bio-FET","Bipolar junction transistor","Bit","Bit-level parallelism","Bit-serial architecture","Bit shift","Bit slicing","Bitwise logic","Bitwise operation","Blu-ray","Boolean algebra","Boolean circuit","Boost converter","Branch prediction","Branch predictor","Branch target predictor","Buck converter","Buck–boost converter","Bus (computing)","CMOS","CPU (disambiguation)","CPU cache","CPU cooling","CPU core voltage","CPU cycle","CPU design","CPU modes","CPU multiplier","CPU power dissipation","CPU socket","Cache (computing)","Cache coherence","Cache hierarchy","Cache performance measurement and metric","Cache replacement policies","Cam timer","Capacitor","Capacitor types","Cathode ray tube","Cavity magnetron","Cell (microprocessor)","Cellular architecture","Cellular automaton","Ceramic resonator","Charactron","Charge pump","Chemical field-effect transistor","Chip carrier","Circuit (computer science)","Circuit minimization for Boolean functions","Classic RISC pipeline","Clipper architecture","Clock gating","Clock rate","Clock signal","Cloud computing","Cognitive computing","Cold cathode","Combinational logic","Compact disc","Compactron","Comparison of instruction set architectures","Complex instruction set computer","Complex programmable logic device","Computer","Computer History Museum","Computer architecture","Computer case","Computer cluster","Computer data storage","Computer engineering","Computer hardware","Computer keyboard","Computer memory","Computer monitor","Computer mouse","Computer performance","Computer performance by orders of magnitude","Computer port (hardware)","Computer program","Computer speakers","Constant-current diode","Control flow","Control hazard","Control unit","Cooperative multitasking","Coprocessor","Counter (digital)","Counter machine","Cray","Cray-1","Crossatron","Crossed-field amplifier","Cryptography","Crystal oscillator","Cycles per instruction","Cypress PSoC","DEC Alpha","DIAC","DVD","Darlington transistor","Data (computing)","Data buffer","Data cache","Data dependency","Data parallelism","Data processing unit","Dataflow architecture","Datapath","Datapoint","Decimal","Dekatron","Demultiplexer","Depletion-load NMOS logic","Deterministic finite automaton","Die (integrated circuit)","Diffused junction transistor","Digital Equipment Corporation","Digital Visual Interface","Digital audio","Digital cinematography","Digital electronics","Digital photography","Digital potentiometer","Digital radio","Digital signal","Digital signal (signal processing)","Digital signal processing","Digital signal processor","Digital television","Digital video","Diode","Direct memory access","Directory-based coherence protocols","Discrete components","Disk pack","DisplayPort","Distributed architecture","Doi (identifier)","Dot product","Dynamic frequency scaling","Dynamic random-access memory","Dynamic voltage scaling","EDVAC","EFuse","ENIAC","ETRAX CRIS","Electrical reactance","Electrolytic detector","Electromagnetic radiation","Electromigration","Electronic circuit","Electronic component","Electronic literature","Electronic oscillator","Electronic visual display","Electronics design","Embarrassingly parallel","Embedded computer","Embedded system","Emitter-coupled logic","Endianness","Erasable programmable logic device","Ethernet","Execution unit","Expansion card","Explicit data graph execution","Explicitly parallel instruction computing","External bus","FIFO (computing and electronics)","FLOPS","Fabric computing","False sharing","Fax modem","Federico Faggin","Ferrite core","Field-effect transistor","Field-programmable gate array","Field-programmable object array","Fin field-effect transistor","Finite-state machine","Finite-state machine with datapath","First Draft of a Report on the EDVAC","Flash memory","Fleming valve","Flip-flop (electronics)","Floating-gate MOSFET","Floating-point arithmetic","Floating-point unit","Floppy disk","Flynn's taxonomy","Formal equivalence checking","Fred Brooks","Fujitsu","Fuse (electrical)","Game controller","Game port","Gas-filled tube","Gate array","Gate equivalent","Gene Amdahl","General-purpose computing on graphics processing units","Generic Array Logic","Gerrit Blaauw","Glue logic","Gordon Moore","Granularity (parallel computing)","Graphics card","Graphics processing unit","Graphics tablet","Gunn diode","Gyrotron","HDMI","Hard disk drive","Hardware acceleration","Hardware description language","Hardware performance counter","Hardware register","Hardware security module","Hardwired control unit","Harvard Mark I","Harvard architecture","Haswell (microarchitecture)","Hazard (computer architecture)","Heat dissipation","Heat pipe","Hertz","Heterogeneous System Architecture","Heterogeneous computing","Heterostructure barrier varactor","Hierarchical state machine","High-level synthesis","History of computing hardware","History of computing hardware (1960s–present)","History of general-purpose CPUs","Hot-wire barretter","HowStuffWorks","Hybrid integrated circuit","Hyper-threading","Hypercomputation","IA-32","IA-64","IBM","IBM POWER architecture","IBM System/360","IBM System/360 Model 30","IBM System/360 Model 40","IBM System/360 architecture","IBM System/370","IBM System/390","IBM System z","IBM z13 (microprocessor)","IEEE 1394","IEEE Transactions on Computers","ISBN (identifier)","ISFET","ISSN (identifier)","Iconoscope","Ignitron","Image processor","Image scanner","Inductive output tube","Inductor","Input/output","Input device","Institute of Electrical and Electronics Engineers","Instruction-level parallelism","Instruction (computing)","Instruction cache","Instruction cycle","Instruction decoder","Instruction pipelining","Instruction set architecture","Instruction unit","Instructions per cycle","Instructions per second","Insulated-gate bipolar transistor","Integer arithmetic operation","Integrated circuit","Intel","Intel 4004","Intel 80486DX2","Intel 8080","Intel Core","Intel Core i9-14900KF","J. Presper Eckert","JFET","John William Mauchly","John von Neumann","Kibibyte","Klystron","Konrad Zuse","Krytron","LDMOS","Large-scale integration","Laser diode","Lee Boysel","Light-emitting diode","Light-emitting transistor","Light emitting capacitor","Light pen","Linear regulator","List of Intel Xeon processors (Core-based)","List of pioneers in computer science","Little man computer","Load–store architecture","Load–store unit","Logic gate","Logic in computer science","Logic synthesis","Low-dropout regulator","M32R","MIPS-X","MIPS architecture","MMX (instruction set)","MOSFET","MOS integrated circuit","Machine instruction","Macrocell array","Magic eye tube","Magnetic-core memory","Main memory","Mainframe computer","Manchester Baby","Manchester Mark 1","Manycore processor","Maser","Mebibyte","Memistor","Memory-level parallelism","Memory (computers)","Memory address","Memory address register","Memory buffer register","Memory card","Memory cell (computing)","Memory controller","Memory dependence prediction","Memory hierarchy","Memory location","Memory management unit","Memory protection","Memristor","Memtransistor","Mercury-arc valve","Mercury relay","Metal-oxide varistor","Metastability (electronics)","Michael J. Flynn","MicroBlaze","Microarchitecture","Microcode","Microcontroller","Microelectronic","Microphone","Microprocessor","Microprocessor chronology","Microprogram","Minicomputer","Minimal instruction set computer","Mixed-signal integrated circuit","Mobile processor","Model of computation","Modified Harvard architecture","Modulo operation","Monoscope","Moore's law","Moore School of Electrical Engineering","Motherboard","Motorola 68000","Motorola 68000 series","Motorola 68010","Multi-chip module","Multi-core processor","Multigate device","Multimedia","Multimedia Acceleration eXtensions","Multiple instruction, multiple data","Multiple instruction, single data","Multiplexer","Multiprocessing","Multiprocessor system on a chip","Multithreading (computer architecture)","NMOS logic","NOR gate","NVM Express","Nanometre","Neon lamp","Network interface controller","Network on a chip","Network processor","Neuromorphic engineering","Neutron generator","Nixie tube","No instruction set computing","Non-uniform memory access","Nondeterministic Turing machine","Nonode","Nonvolatile BIOS memory","Numeral system","Nuvistor","Nvidia RTX","OLED","One-instruction set computer","Opcode","OpenRISC","Operand","Operand forwarding","Operands","Operating system","Opteron","Optical disc","Optical mouse","Optical trackpad","Organic field-effect transistor","Organic light-emitting transistor","Organic semiconductor","Orthogonal instruction set","Out-of-order execution","Output device","Overclocking","Overheating (electricity)","P5 (microarchitecture)","P6 (microarchitecture)","PDP-10","PDP-11","PDP-11 architecture","PDP-8","PIN diode","PMOS logic","POWER4","POWER5","PS/2 port","Package on a package","Paging","Parallel computing"],"blacklist":[],"lastLinkClicked":"Central processing unit"}
+[16:31:24.666] INFO (88859):
+[Outer Loop] Stable state found! Calling planner.evaluate()...
+✨  Done in 18.39s.
