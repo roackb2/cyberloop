@@ -1,11 +1,11 @@
-import type { Ladder, ProbePolicy } from '../../core/interfaces';
-import { dot, norm } from '../../core/kinematics/math';
-import type { WikipediaEmbedder } from './embedder';
-import { logger } from './telemetry';
-import type { WikiAction, WikiState } from './types';
+import type { Ladder, ProbePolicy } from '../../../core/interfaces';
+import { dot, norm } from '../../../core/kinematics/math';
+import type { WikipediaEmbedder } from '../embedder';
+import { logger } from '../telemetry';
+import type { WikiAction, WikiState } from '../types';
 
-export class StochasticHeuristicPolicy implements ProbePolicy<WikiState, WikiAction, number> {
-  public id = 'stochastic-heuristic-policy';
+export class NaiveGreedyPolicy implements ProbePolicy<WikiState, WikiAction, number> {
+  public id = 'naive-greedy-policy';
 
   constructor(
     private embedder: WikipediaEmbedder,
@@ -13,7 +13,7 @@ export class StochasticHeuristicPolicy implements ProbePolicy<WikiState, WikiAct
   ) { }
 
   initialize(_state: WikiState): void {
-    // No-op for stochastic policy
+    // No-op for greedy policy
   }
 
   isStable(state: WikiState): boolean {
@@ -26,11 +26,11 @@ export class StochasticHeuristicPolicy implements ProbePolicy<WikiState, WikiAct
     }
 
     if (!state.links || state.links.length === 0) {
-      logger.warn("[StochasticHeuristicPolicy] Dead end! No links found.");
+      logger.warn("[NaiveGreedyPolicy] Dead end! No links found.");
       return { type: 'DONE', result: "Dead End" };
     }
 
-    // Filter out meta-namespaces (basic sanity check only, core filtering moved to guards)
+    // Filter out meta-namespaces
     const basicValidLinks = state.links.filter(link =>
       !link.startsWith('Wikipedia:') &&
       !link.startsWith('Template:') &&
@@ -43,14 +43,14 @@ export class StochasticHeuristicPolicy implements ProbePolicy<WikiState, WikiAct
     );
 
     if (basicValidLinks.length === 0) {
-      logger.warn("[StochasticHeuristicPolicy] Dead end after basic filtering! No valid links found.");
+      logger.warn("[NaiveGreedyPolicy] Dead end after basic filtering! No valid links found.");
       return { type: 'DONE', result: "Dead End (Filtered)" };
     }
 
     // Optimization: Take first 50 links (or random sample) to evaluate
     const candidates = basicValidLinks.slice(0, 50);
 
-    logger.debug(`[StochasticHeuristicPolicy] Evaluating ${candidates.length} candidates...`);
+    logger.debug(`[NaiveGreedyPolicy] Evaluating ${candidates.length} candidates...`);
 
     // 2. Embed candidates
     const embeddings = await this.embedder.embedBatch(candidates);
@@ -72,10 +72,10 @@ export class StochasticHeuristicPolicy implements ProbePolicy<WikiState, WikiAct
     scores.sort((a, b) => b.sim - a.sim);
 
     // 4. Select Top-1 (Greedy) or Stochastic Top-3
-    const top3 = scores.slice(0, 3);
-    const selected = top3[Math.floor(Math.random() * top3.length)];
+    // For pure "Dumb Muscle" greedy, we strictly take Top-1
+    const selected = scores[0];
 
-    logger.info(`[StochasticHeuristicPolicy] Selected: ${selected.link} (Score: ${selected.sim.toFixed(4)}, Raw: ${selected.rawSim.toFixed(4)}, Weight: ${selected.weight.toFixed(2)})`);
+    logger.info(`[NaiveGreedyPolicy] Selected: ${selected.link} (Score: ${selected.sim.toFixed(4)})`);
 
     return { type: 'NAVIGATE', title: selected.link };
   }

@@ -7,10 +7,13 @@ import { WikipediaEnv } from '../../adapters/wikipedia/env';
 import { WikipediaEvaluator } from '../../adapters/wikipedia/evaluator';
 import { WikiLadder } from '../../adapters/wikipedia/ladder';
 import { WikipediaPlanner } from '../../adapters/wikipedia/planner';
-import { GreedyWikiPolicy } from '../../adapters/wikipedia/policy';
+import { LlmCoTPolicy } from '../../adapters/wikipedia/policies/llm-cot';
+import { NaiveGreedyPolicy } from '../../adapters/wikipedia/policies/naive';
+import { StochasticHeuristicPolicy } from '../../adapters/wikipedia/policy';
 import { logger } from '../../adapters/wikipedia/telemetry';
 import type { WikiAction, WikiState } from '../../adapters/wikipedia/types';
 import { createControlBudget } from '../../core/budget/control-budget';
+import type { ProbePolicy } from '../../core/interfaces';
 import { PhysicsEngine } from '../../core/kinematics/engine';
 import { PIDController } from '../../core/kinematics/pid';
 import { KinematicProbePolicy } from '../../core/kinematics/policy';
@@ -52,9 +55,20 @@ async function main() {
     process.exit(1);
   }
 
-  // Scenario Selection
+  // Argument Parsing
   const args = process.argv.slice(2);
-  const scenarioKey = args[0] || 'tech';
+  let scenarioKey = 'tech';
+  let mode = 'cyberloop';
+
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === '--mode' && i + 1 < args.length) {
+      mode = args[i + 1];
+      i++; // skip next
+    } else if (!args[i].startsWith('--')) {
+      scenarioKey = args[i];
+    }
+  }
+
   const scenario = SCENARIOS[scenarioKey];
 
   if (!scenario) {
@@ -65,6 +79,7 @@ async function main() {
 
   logger.info(`📖 Scenario: ${scenario.name} - ${scenario.description}`);
   logger.info(`🎯 Goal: ${scenario.start} -> ${scenario.end}`);
+  logger.info(`⚙️  Mode: ${mode}`);
 
   const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
@@ -76,7 +91,7 @@ async function main() {
   // 1. Setup Embedder & Goal
   const embedder = new WikipediaEmbedder(openai);
 
-  // We need goal embedding for the greedy policy
+  // We need goal embedding for the greedy policies and kinematic policy
   logger.info("🧠 Embedding Goal...");
   const goalResponse = await openai.embeddings.create({
     model: 'text-embedding-3-small',
@@ -85,39 +100,59 @@ async function main() {
   });
   const goalEmbedding = goalResponse.data[0].embedding;
 
-  // 2. Setup Policies
-  const basePolicy = new GreedyWikiPolicy(embedder, goalEmbedding);
+  // 2. Setup Policy based on Mode
+  let probePolicy: ProbePolicy<WikiState, WikiAction, number>;
 
-  // Wrap base policy with Guards and Reflexes
-  const innerPolicy = new ChainPolicy<WikiState, WikiAction, number>(
-    basePolicy,
-    // Guards (Modify State)
-    [
-      new BlacklistGuard<WikiState>(),
-      new BoredomGuard<WikiState>()
-    ],
-    // Reflexes (Priority Override)
-    [
-      new LineOfSightReflex(),
-      new SoftLandingReflex(embedder, goalEmbedding)
-    ]
-  );
+  switch (mode) {
+    case 'greedy':
+      logger.info("🔹 using Baseline A: Pure Greedy Policy");
+      probePolicy = new NaiveGreedyPolicy(embedder, goalEmbedding);
+      break;
 
-  const kinematics = new PhysicsEngine({
-    ProcessNoise: 0.1,
-    MeasureNoise: 0.5,
-    PID: { Kp: 0.5, Ki: 0.0, Kd: 0.1 }, // Relaxed PID to avoid killing valid "Epiphany" jumps
-    MaxDeviation: 0.6 // Relaxed Cone: Allow up to ~30-40 degrees deviation
-  });
+    case 'cot':
+      logger.info("🔹 using Baseline B: LLM Chain-of-Thought Policy");
+      probePolicy = new LlmCoTPolicy(openai);
+      break;
 
-  const pid = new PIDController(0.5, 0.0, 0.1, 0.6);
+    case 'cyberloop':
+    default: {
+      logger.info("🔹 using CyberLoop: Kinematic Probe Policy");
+      // Setup CyberLoop Stack
+      const basePolicy = new StochasticHeuristicPolicy(embedder, goalEmbedding);
 
-  const kinematicPolicy = new KinematicProbePolicy(
-    innerPolicy,
-    embedder,
-    kinematics,
-    pid
-  );
+      // Wrap base policy with Guards and Reflexes
+      const innerPolicy = new ChainPolicy<WikiState, WikiAction, number>(
+        basePolicy,
+        // Guards (Modify State)
+        [
+          new BlacklistGuard<WikiState>(),
+          new BoredomGuard<WikiState>()
+        ],
+        // Reflexes (Priority Override)
+        [
+          new LineOfSightReflex(),
+          new SoftLandingReflex(embedder, goalEmbedding)
+        ]
+      );
+
+      const kinematics = new PhysicsEngine({
+        ProcessNoise: 0.1,
+        MeasureNoise: 0.5,
+        PID: { Kp: 0.5, Ki: 0.0, Kd: 0.1 }, // Relaxed PID to avoid killing valid "Epiphany" jumps
+        MaxDeviation: 0.6 // Relaxed Cone: Allow up to ~30-40 degrees deviation
+      });
+
+      const pid = new PIDController(0.5, 0.0, 0.1, 0.6);
+
+      probePolicy = new KinematicProbePolicy(
+        innerPolicy,
+        embedder,
+        kinematics,
+        pid
+      );
+      break;
+    }
+  }
 
   // 3. Setup Orchestrator
   const env = new WikipediaEnv(startTopic, endTopic);
@@ -127,13 +162,13 @@ async function main() {
 
   const orchestrator = new Orchestrator({
     env,
-    probePolicy: kinematicPolicy,
+    probePolicy,
     planner,
     probes: [], // No separate probes, policy is the probe
     evaluator,
     ladder,
     budget: createControlBudget(100, 100),
-    maxInnerSteps: 50, // Increased for longer paths
+    maxInnerSteps: 30, // Increased for longer paths
     logger
   });
 
@@ -141,7 +176,9 @@ async function main() {
   // We pass the "goal" as input to the planner, which will parse it
   // But our env is already hardcoded with start/end in this demo script.
   // The planner in this demo mainly just confirms the route or sets up initial state metadata if needed.
-  await orchestrator.run(`${startTopic} -> ${endTopic}`);
+  const result = await orchestrator.run(`${startTopic} -> ${endTopic}`);
+
+  logger.info(`🏁 Final Result [${mode}]: ${JSON.stringify(result)}`);
 }
 
 main().catch(err => {
