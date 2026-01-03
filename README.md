@@ -144,7 +144,8 @@ yarn examples:github
 * **Benchmarks:** [Wikipedia Navigation Results](docs/benchmarks/wikipedia/benchmark-wikipedia-navigation.md)
 * **Theory:** [AICL Whitepaper](docs/whitepaper/AICL.md)
 * **Architecture:** [Inner/Outer Loop Spec](docs/architecture/inner-outer-loop.md)
-* **Academic:** [Zenodo Record](https://zenodo.org/records/17835680) (Cite as Liang, 2025)
+* **Academic (v2.1):** Zenodo Record - [The Brain Needs a Body (Liang, 2026)](https://zenodo.org/records/18138161)
+* **Academic (v1.0):** Zenodo Record - [AICL Whitepaper (Liang, 2025)](https://zenodo.org/records/17835680)
 
 ---
 
