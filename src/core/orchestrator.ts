@@ -219,7 +219,11 @@ export class Orchestrator<S = State, A = Action, F = Feedback, D = ProbeData, R 
       })
 
       // Debug logging
-      const stateInspection = this.probes[0]?.inspectState?.(state) ?? JSON.stringify(state, (key, value: unknown) => {
+      let stateInspection = this.probes[0]?.inspectState?.(state);
+
+      // Fallback: Create a sanitized object (not string) using JSON parse/stringify hack with replacer
+      // This ensures pino logs it as a structured object under a key, not as the message string.
+      stateInspection ??= JSON.parse(JSON.stringify(state, (key, value: unknown) => {
         if (key === 'summary' && typeof value === 'string' && value.length > 150) {
           return value.substring(0, 150) + '... (truncated)'
         }
@@ -228,8 +232,9 @@ export class Orchestrator<S = State, A = Action, F = Feedback, D = ProbeData, R 
           return `[Vector(${value.length})]`
         }
         return value
-      })
-      this.logger?.info(stateInspection, `[Inner Loop t=${t}], stable=${isStable}, budget=${this.budget.innerLoop.remaining().toFixed(2)}`)
+      })) as Record<string, unknown>;
+
+      this.logger?.info({ state: stateInspection }, `[Inner Loop t=${t}], stable=${isStable}, budget=${this.budget.innerLoop.remaining().toFixed(2)}`)
 
       if (isStable) {
         return {

@@ -1,7 +1,8 @@
-import type { Ladder, ProbePolicy } from '../interfaces';
+import type { Ladder, Logger, ProbePolicy } from '../interfaces';
 import type { Action, Feedback, State } from '../types';
 import type { PhysicsEngine } from './engine';
 import type { StateEmbedder } from './interfaces';
+import { norm } from './math';
 import type { PIDController } from './pid';
 import type { CorrectionAction, KinematicState, Vector3D } from './types';
 
@@ -14,7 +15,8 @@ export class KinematicProbePolicy<S extends State, A extends Action, F extends F
     private innerPolicy: ProbePolicy<S, A, F>,
     private embedder: StateEmbedder<S>,
     private engine: PhysicsEngine,
-    private pid: PIDController
+    private pid: PIDController,
+    private logger?: Logger
   ) { }
 
   initialize(state: S): void {
@@ -54,10 +56,29 @@ export class KinematicProbePolicy<S extends State, A extends Action, F extends F
 
     // 2. Update Physics Engine
     // We pass the previous state and the NEW observation
-    const { next, error } = this.engine.update(this.lastPhysicsState, observation, this.origin);
+    const { next, error, coherence } = this.engine.update(this.lastPhysicsState, observation, this.origin);
 
     // 3. Compute PID Correction
     const correction = this.pid.compute(error);
+
+    // Telemetry Logging
+    if (this.logger) {
+      const angleDeg = (coherence * 180 / Math.PI).toFixed(1);
+      const velocityMag = norm(next.velocity).toFixed(4);
+      const errorMag = norm(error).toFixed(4);
+      const correctionMag = correction.magnitude.toFixed(4);
+
+      this.logger.info({
+        kinematics: {
+          angle_deg: parseFloat(angleDeg),
+          velocity: parseFloat(velocityMag),
+          error: parseFloat(errorMag),
+          correction: parseFloat(correctionMag),
+          stable: correction.isStable,
+          step: next.stepIndex
+        }
+      }, `[Kinematics] Step ${next.stepIndex}: Angle=${angleDeg}°, Err=${errorMag}, Corr=${correctionMag}, Stable=${correction.isStable}`);
+    }
 
     // 4. Control Logic
     if (correction.isStable) {
@@ -76,6 +97,9 @@ export class KinematicProbePolicy<S extends State, A extends Action, F extends F
         magnitude: correction.magnitude,
         log: correction.log
       };
+
+      this.logger?.warn(`[Kinematics] ⚠️ Correction Triggered! Magnitude ${correction.magnitude.toFixed(2)} > Threshold`);
+
       return action as unknown as A;
     }
   }

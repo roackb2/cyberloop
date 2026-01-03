@@ -10,7 +10,7 @@ import { WikipediaPlanner } from '../../adapters/wikipedia/planner';
 import { LlmCoTPolicy } from '../../adapters/wikipedia/policies/llm-cot';
 import { NaiveGreedyPolicy } from '../../adapters/wikipedia/policies/naive';
 import { StochasticHeuristicPolicy } from '../../adapters/wikipedia/policy';
-import { logger } from '../../adapters/wikipedia/telemetry';
+import { logger, setupBenchmarkLogger } from '../../adapters/wikipedia/telemetry';
 import type { WikiAction, WikiState } from '../../adapters/wikipedia/types';
 import { createControlBudget } from '../../core/budget/control-budget';
 import type { ProbePolicy } from '../../core/interfaces';
@@ -48,10 +48,8 @@ const SCENARIOS: Record<string, Scenario> = {
 
 // Main Demo
 async function main() {
-  logger.info("🚀 Starting Project Ariadne: Wikipedia Deep-Dive Agent");
-
   if (!process.env.OPENAI_API_KEY) {
-    logger.error("❌ OPENAI_API_KEY is required in .env");
+    console.error("❌ OPENAI_API_KEY is required in .env");
     process.exit(1);
   }
 
@@ -72,11 +70,15 @@ async function main() {
   const scenario = SCENARIOS[scenarioKey];
 
   if (!scenario) {
-    logger.error(`❌ Unknown scenario: ${scenarioKey}`);
-    logger.info(`Available scenarios: ${Object.keys(SCENARIOS).join(', ')}`);
+    console.error(`❌ Unknown scenario: ${scenarioKey}`);
+    console.info(`Available scenarios: ${Object.keys(SCENARIOS).join(', ')}`);
     process.exit(1);
   }
 
+  // Setup Logging
+  const logPath = setupBenchmarkLogger(scenario.name, mode);
+  logger.info(`📝 Logging to: ${logPath}`);
+  logger.info("🚀 Starting Project Ariadne: Wikipedia Deep-Dive Agent");
   logger.info(`📖 Scenario: ${scenario.name} - ${scenario.description}`);
   logger.info(`🎯 Goal: ${scenario.start} -> ${scenario.end}`);
   logger.info(`⚙️  Mode: ${mode}`);
@@ -103,43 +105,75 @@ async function main() {
   // 2. Setup Policy based on Mode
   let probePolicy: ProbePolicy<WikiState, WikiAction, number>;
 
+  // Reusable components
+  const boredomGuard = new BoredomGuard<WikiState>();
+  const blacklistGuard = new BlacklistGuard<WikiState>();
+  const reflexLineOfSight = new LineOfSightReflex();
+  const reflexSoftLanding = new SoftLandingReflex(embedder, goalEmbedding);
+
+  // Note: We use StochasticHeuristicPolicy as base for some to add entropy,
+  // but NaiveGreedyPolicy is strictly deterministic top-1.
+
   switch (mode) {
+    // --- BASELINE A: PURE GREEDY ---
     case 'greedy':
-      logger.info("🔹 using Baseline A: Pure Greedy Policy");
+    case 'baseline-a1':
+      logger.info("🔹 Mode: Baseline A1 (Pure Greedy)");
+      // Just follows cosine similarity. No memory. No lookahead.
       probePolicy = new NaiveGreedyPolicy(embedder, goalEmbedding);
       break;
 
+    // --- BASELINE A2: SMART GREEDY (GREEDY + MEMORY) ---
+    case 'greedy-boredom':
+    case 'baseline-a2':
+      logger.info("🔹 Mode: Baseline A2 (Greedy + Boredom/Blacklist)");
+      // Adds "Memory" (Guards) to Greedy. Should solve cycles but maybe zig-zag.
+      probePolicy = new ChainPolicy<WikiState, WikiAction, number>(
+        new NaiveGreedyPolicy(embedder, goalEmbedding),
+        [blacklistGuard, boredomGuard],
+        [] // No reflexes
+      );
+      break;
+
+    // --- BASELINE A3: SUPER GREEDY (GREEDY + MEMORY + REFLEX) ---
+    case 'greedy-reflex':
+    case 'baseline-a3':
+      logger.info("🔹 Mode: Baseline A3 (Greedy + Boredom + Reflexes)");
+      // Adds "Reflexes" (Line of Sight). Should be very fast if lucky.
+      probePolicy = new ChainPolicy<WikiState, WikiAction, number>(
+        new NaiveGreedyPolicy(embedder, goalEmbedding),
+        [blacklistGuard, boredomGuard],
+        [reflexLineOfSight, reflexSoftLanding]
+      );
+      break;
+
+    // --- BASELINE B: LLM CoT ---
     case 'cot':
-      logger.info("🔹 using Baseline B: LLM Chain-of-Thought Policy");
+    case 'baseline-b':
+      logger.info("🔹 Mode: Baseline B (LLM Chain-of-Thought)");
       probePolicy = new LlmCoTPolicy(openai);
       break;
 
-    case 'cyberloop':
-    default: {
-      logger.info("🔹 using CyberLoop: Kinematic Probe Policy");
-      // Setup CyberLoop Stack
-      const basePolicy = new StochasticHeuristicPolicy(embedder, goalEmbedding);
+    // --- CYBERLOOP (STRICT): DETERMINISTIC KINEMATICS ---
+    case 'cyberloop-strict': {
+      logger.info("🔹 Mode: CyberLoop Strict (Kinematics + Greedy Base)");
+      // Base is NaiveGreedy (Deterministic)
+      const basePolicy = new NaiveGreedyPolicy(embedder, goalEmbedding);
 
-      // Wrap base policy with Guards and Reflexes
+      // Inner stack is same as A3/Super Greedy components
       const innerPolicy = new ChainPolicy<WikiState, WikiAction, number>(
         basePolicy,
-        // Guards (Modify State)
-        [
-          new BlacklistGuard<WikiState>(),
-          new BoredomGuard<WikiState>()
-        ],
-        // Reflexes (Priority Override)
-        [
-          new LineOfSightReflex(),
-          new SoftLandingReflex(embedder, goalEmbedding)
-        ]
+        // Guards
+        [blacklistGuard, boredomGuard],
+        // Reflexes
+        [reflexLineOfSight, reflexSoftLanding]
       );
 
       const kinematics = new PhysicsEngine({
         ProcessNoise: 0.1,
         MeasureNoise: 0.5,
-        PID: { Kp: 0.5, Ki: 0.0, Kd: 0.1 }, // Relaxed PID to avoid killing valid "Epiphany" jumps
-        MaxDeviation: 0.6 // Relaxed Cone: Allow up to ~30-40 degrees deviation
+        PID: { Kp: 0.5, Ki: 0.0, Kd: 0.1 }, // Relaxed PID
+        MaxDeviation: 0.6 // Relaxed Cone
       });
 
       const pid = new PIDController(0.5, 0.0, 0.1, 0.6);
@@ -148,7 +182,44 @@ async function main() {
         innerPolicy,
         embedder,
         kinematics,
-        pid
+        pid,
+        logger
+      );
+      break;
+    }
+
+    // --- CYBERLOOP (FULL): STOCHASTIC KINEMATICS ---
+    case 'cyberloop':
+    default: {
+      logger.info("🔹 Mode: CyberLoop (Kinematics + Stochastic Base)");
+      // Setup CyberLoop Stack
+      // Base is Stochastic to allow for "Creativity" which PID then filters
+      const basePolicy = new StochasticHeuristicPolicy(embedder, goalEmbedding);
+
+      // Inner stack is same as A3/Super Greedy components
+      const innerPolicy = new ChainPolicy<WikiState, WikiAction, number>(
+        basePolicy,
+        // Guards
+        [blacklistGuard, boredomGuard],
+        // Reflexes
+        [reflexLineOfSight, reflexSoftLanding]
+      );
+
+      const kinematics = new PhysicsEngine({
+        ProcessNoise: 0.1,
+        MeasureNoise: 0.5,
+        PID: { Kp: 0.5, Ki: 0.0, Kd: 0.1 }, // Relaxed PID
+        MaxDeviation: 0.6 // Relaxed Cone
+      });
+
+      const pid = new PIDController(0.5, 0.0, 0.1, 0.6);
+
+      probePolicy = new KinematicProbePolicy(
+        innerPolicy,
+        embedder,
+        kinematics,
+        pid,
+        logger
       );
       break;
     }
@@ -168,14 +239,11 @@ async function main() {
     evaluator,
     ladder,
     budget: createControlBudget(100, 100),
-    maxInnerSteps: 15,
+    maxInnerSteps: 20, // slightly increased for long runs
     logger
   });
 
   // 4. Run
-  // We pass the "goal" as input to the planner, which will parse it
-  // But our env is already hardcoded with start/end in this demo script.
-  // The planner in this demo mainly just confirms the route or sets up initial state metadata if needed.
   const result = await orchestrator.run(`${startTopic} -> ${endTopic}`);
 
   logger.info(`🏁 Final Result [${mode}]: ${JSON.stringify(result)}`);
