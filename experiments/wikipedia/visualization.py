@@ -135,6 +135,7 @@ def plot_kinematics(runs, title_suffix, output_filename):
         'baseline-a3': {'color': 'tab:purple', 'ls': '-.', 'marker': '^', 'label': 'Baseline A3'},
         'cyberloop-strict': {'color': 'tab:cyan', 'ls': '-', 'marker': 'D', 'label': 'CyberLoop (Strict)'},
         'cyberloop': {'color': 'tab:blue', 'ls': '-', 'marker': 's', 'label': 'CyberLoop (Full)'},
+        'baseline-b': {'color': 'tab:green', 'ls': '-.', 'marker': '*', 'label': 'Baseline B (LLM CoT)'},
         'cot': {'color': 'tab:green', 'ls': '-.', 'marker': '*', 'label': 'Baseline B (LLM CoT)'}
     }
 
@@ -236,6 +237,7 @@ def run_visualization(scenario_id, title_suffix, output_filename, custom_landmar
         'baseline-a3': {'color': 'tab:purple', 'ls': '-.', 'marker': '^', 'label': 'Baseline A3 (Greedy+Mem+Reflex)'},
         'cyberloop-strict': {'color': 'tab:cyan', 'ls': '-', 'marker': 'D', 'label': 'CyberLoop (Strict/Safety)'},
         'cyberloop': {'color': 'tab:blue', 'ls': '-', 'marker': 's', 'label': 'CyberLoop (Full)'},
+        'baseline-b': {'color': 'tab:green', 'ls': '-.', 'marker': '*', 'label': 'Baseline B (LLM CoT)'},
         'cot': {'color': 'tab:green', 'ls': '-.', 'marker': '*', 'label': 'Baseline B (LLM CoT)'}
     }
 
