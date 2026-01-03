@@ -1,6 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import pino from 'pino'
+import pretty from 'pino-pretty'
 
 import type { Logger } from '../../core/interfaces'
 
@@ -26,14 +27,18 @@ export const setupBenchmarkLogger = (scenario: string, policy: string) => {
 
   const logPath = path.join(logDir, filename);
 
+  // Configure pretty stream for console
+  const prettyStream = pretty({
+    colorize: true,
+    sync: true // Ensure logs are flushed immediately to console
+  });
+
   // Re-initialize logger with multi-stream (File + Console)
-  // Note: pino-pretty doesn't work well inside multistream for stdout,
-  // so we'll keep stdout raw or simple for now, or just use file for detailed debug.
   logger = pino({
     level: 'debug'
   }, pino.multistream([
-    { stream: fs.createWriteStream(logPath), level: 'debug' },
-    { stream: process.stdout, level: 'info' } // Less verbose on console
+    { stream: fs.createWriteStream(logPath), level: 'debug' }, // Raw JSON to file
+    { stream: prettyStream, level: 'info' } // Pretty print to console
   ]));
 
   return logPath;

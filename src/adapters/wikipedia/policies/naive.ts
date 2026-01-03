@@ -71,6 +71,17 @@ export class NaiveGreedyPolicy implements ProbePolicy<WikiState, WikiAction, num
     // Sort descending
     scores.sort((a, b) => b.sim - a.sim);
 
+    // LOGGING: Candidate Scores (Decision Anatomy)
+    // Show top 5 to see what the greedy policy "wanted" to do vs what might be blocked later
+    const topCandidates = scores.slice(0, 5);
+    logger.info({
+      candidates: topCandidates.map(c => ({
+        title: c.link,
+        score: c.sim.toFixed(4),
+        raw: c.rawSim.toFixed(4)
+      }))
+    }, `[NaiveGreedyPolicy] Top 5 Candidates considered`);
+
     // 4. Select Top-1 (Greedy) or Stochastic Top-3
     // For pure "Dumb Muscle" greedy, we strictly take Top-1
     const selected = scores[0];

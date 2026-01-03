@@ -71,6 +71,16 @@ export class StochasticHeuristicPolicy implements ProbePolicy<WikiState, WikiAct
     // Sort descending
     scores.sort((a, b) => b.sim - a.sim);
 
+    // LOGGING: Candidate Scores (Decision Anatomy)
+    const topCandidates = scores.slice(0, 5);
+    logger.info({
+      candidates: topCandidates.map(c => ({
+        title: c.link,
+        score: c.sim.toFixed(4),
+        raw: c.rawSim.toFixed(4)
+      }))
+    }, `[StochasticHeuristicPolicy] Top 5 Candidates considered`);
+
     // 4. Select Top-1 (Greedy) or Stochastic Top-3
     const top3 = scores.slice(0, 3);
     const selected = top3[Math.floor(Math.random() * top3.length)];

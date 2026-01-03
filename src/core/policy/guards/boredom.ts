@@ -1,3 +1,4 @@
+import { logger } from '../../../adapters/wikipedia/telemetry';
 import type { PolicyGuard } from '../chain';
 
 interface StateWithHistory {
@@ -31,7 +32,7 @@ export class BoredomGuard<S extends StateWithHistory> implements PolicyGuard<S> 
     }
 
     // 2. Calculate Weights for Candidates
-    const weights: Record<string, number> = { ...(state.candidateWeights || {}) };
+    const weights: Record<string, number> = { ...(state.candidateWeights ?? {}) };
     let hasUpdates = false;
 
     for (const link of state.links) {
@@ -55,6 +56,8 @@ export class BoredomGuard<S extends StateWithHistory> implements PolicyGuard<S> 
 
         weights[link] = currentWeight * penaltyMultiplier;
         hasUpdates = true;
+
+        logger?.info(`[BoredomGuard] 📉 Penalizing '${link}': penalty=${boredomPenalty.toFixed(2)}, newWeight=${penaltyMultiplier.toFixed(2)}`);
       }
     }
 
