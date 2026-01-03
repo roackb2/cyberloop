@@ -56,11 +56,19 @@ def load_logs(log_dir, scenario_filter=None):
 
         trajectory = []
         kinematics_series = []
+        is_success = False
 
         with open(f, 'r') as file:
             for line in file:
                 try:
                     entry = json.loads(line)
+
+                    # Check for Success/Failure signals
+                    msg = entry.get('msg', '')
+                    if "Stable state found" in msg or "Navigation Complete" in msg:
+                        is_success = True
+                    elif "Inner Loop exhausted" in msg or "Immediate stop for experiment comparison" in msg:
+                        is_success = False
 
                     # 1. State Trajectory
                     state = entry.get('state')
@@ -88,7 +96,8 @@ def load_logs(log_dir, scenario_filter=None):
                 'timestamp': timestamp,
                 'path': trajectory,
                 'kinematics': kinematics_series,
-                'label': f"{policy}"  # Simplified label
+                'label': f"{policy}",  # Simplified label
+                'success': is_success
             })
 
     return data
@@ -241,6 +250,7 @@ def run_visualization(scenario_id, title_suffix, output_filename, custom_landmar
         'cot': {'color': 'tab:green', 'ls': '-.', 'marker': '*', 'label': 'Baseline B (LLM CoT)'}
     }
 
+    seen_policies = set()
     for run in runs:
         policy = run['policy']
         path = run['path']
@@ -255,18 +265,40 @@ def run_visualization(scenario_id, title_suffix, output_filename, custom_landmar
         jitter = np.random.normal(0, 0.04, path_coords.shape)
         path_coords_jittered = path_coords + jitter
 
+        # Handle Legend Deduplication
+        lbl = style['label']
+        if lbl in seen_policies:
+            lbl = None
+        else:
+            seen_policies.add(lbl)
+
         # Plot Line
         plt.plot(path_coords_jittered[:, 0], path_coords_jittered[:, 1],
-                 color=style['color'], label=style['label'], linestyle=style['ls'], linewidth=2, alpha=0.6)
+                 color=style['color'], label=lbl, linestyle=style['ls'], linewidth=2, alpha=0.6)
 
         # Plot Markers
         plt.scatter(path_coords_jittered[:, 0], path_coords_jittered[:, 1],
                     color=style['color'], s=50, marker=style['marker'], alpha=0.7)
 
-        # Annotate Steps (First and Last few, or strided to avoid clutter)
-        # Showing start and end is usually most important
-        plt.text(path_coords_jittered[0, 0], path_coords_jittered[0, 1], "Start", fontsize=9, fontweight='bold', color='black')
-        plt.text(path_coords_jittered[-1, 0], path_coords_jittered[-1, 1], f"End ({len(path)})", fontsize=9, fontweight='bold', color=style['color'])
+        # Visual Indication of Success/Failure
+        is_success = run.get('success', False)
+        end_marker = '*' if is_success else 'X'
+
+        # Plot distinct end marker
+        plt.scatter(path_coords_jittered[-1, 0], path_coords_jittered[-1, 1],
+                    color=style['color'], s=200, marker=end_marker, edgecolors='black', zorder=10)
+
+    # Annotate Start (One-time, unjittered)
+    if runs and runs[0]['path']:
+        start_node = runs[0]['path'][0]
+        if start_node in node_map:
+            start_coord = node_map[start_node]
+            plt.text(start_coord[0], start_coord[1], "Start", fontsize=10, fontweight='bold', color='black',
+                     bbox=dict(facecolor='white', alpha=0.7, edgecolor='none', pad=2), zorder=20)
+
+    # Add Custom Legend for Success/Fail
+    plt.scatter([], [], color='white', marker='*', s=200, edgecolors='black', label='Success')
+    plt.scatter([], [], color='white', marker='X', s=200, edgecolors='black', label='Fail')
 
     # Highlight Landmarks
     key_landmarks = custom_landmarks if custom_landmarks else []
@@ -281,7 +313,8 @@ def run_visualization(scenario_id, title_suffix, output_filename, custom_landmar
     plt.title(f"Trajectory Analysis: {title_suffix}", fontsize=16)
     plt.xlabel("Semantic Dimension 1 (PCA)")
     plt.ylabel("Semantic Dimension 2 (PCA)")
-    plt.legend(loc='best')
+    # Legend top-left inside graph
+    plt.legend(loc='upper left', framealpha=0.9)
     plt.grid(True, alpha=0.2)
 
     output_path = os.path.join(OUTPUT_DIR, output_filename)
