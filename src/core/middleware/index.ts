@@ -1,5 +1,7 @@
 export { budgetMiddleware } from './budget';
 export { evaluatorMiddleware } from './evaluator';
+export type { PolicyMiddlewareOpts } from './policy';
+export { policyMiddleware } from './policy';
 export { probeMiddleware } from './probe';
 export { MiddlewareRunner } from './runner';
 export type { StagnationOpts } from './stagnation';

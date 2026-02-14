@@ -13,10 +13,11 @@
  *   - **Inner loop**: Policy (deterministic/heuristic) executes search steps
  *
  * Here we only port the inner loop as a SteppableAgent. Each step() call:
- *   1. ChainPolicy runs reflexes (line-of-sight, soft-landing) — fast intercepts
- *   2. ChainPolicy runs guards (blacklist, boredom) — state modifiers
- *   3. Base policy (StochasticHeuristicPolicy) embeds candidates, ranks, selects
- *   4. WikipediaEnv applies the action (fetches next Wikipedia page)
+ *   1. decideAction(state) — provided by policyMiddleware(), delegates to ChainPolicy:
+ *      a. Reflexes (line-of-sight, soft-landing) — fast intercepts
+ *      b. Guards (blacklist, boredom) — state modifiers
+ *      c. Base policy (StochasticHeuristicPolicy) embeds candidates, ranks, selects
+ *   2. WikipediaEnv applies the action (fetches next Wikipedia page)
  *
  * The cyberloop() middleware layer (budget, kinematics, telemetry) wraps around
  * these inner-loop steps, providing observation and control at the step boundary.
@@ -29,7 +30,9 @@
  *   - Middleware: "before/after the agent acts" — budget, telemetry, kinematics
  *   - Guards/Reflexes: "before/during the policy decides" — blacklist, boredom
  *
- * A future policyMiddleware() could lift this wiring into the middleware chain.
+ * policyMiddleware() lifts the ChainPolicy wiring into a declarative config,
+ * returning a decideAction() function for use inside step() and a middleware
+ * component for the cyberloop() chain.
  *
  * Only the main "cyberloop" mode is ported here. For other benchmark modes
  * (greedy, boredom, cot, etc.), see the legacy demo.ts.
@@ -54,8 +57,8 @@ import { kinematicsMiddleware } from '@/advanced/kinematics-middleware'
 import type { AgentResult, StepOutput, SteppableAgent } from '@/core/agent-protocol'
 import type { StateEmbedder } from '@/core/kinematics/interfaces'
 import { ProportionalLadder } from '@/core/ladder/proportional'
+import { policyMiddleware } from '@/core/middleware/policy'
 import { telemetryMiddleware } from '@/core/middleware/telemetry'
-import { ChainPolicy } from '@/core/policy/chain'
 import { BlacklistGuard } from '@/core/policy/guards/blacklist'
 import { BoredomGuard } from '@/core/policy/guards/boredom'
 import { LineOfSightReflex } from '@/core/policy/reflexes/line-of-sight'
@@ -113,7 +116,7 @@ interface WikiResult extends AgentResult {
 async function createWikiAgent(
   scenario: Scenario,
   openai: OpenAI,
-): Promise<{ agent: SteppableAgent<WikiState, string, WikiResult>; embedder: WikipediaEmbedder; goalEmbedding: number[] }> {
+): Promise<{ agent: SteppableAgent<WikiState, string, WikiResult>; middleware: ReturnType<typeof policyMiddleware<WikiState, WikiAction, number>>['middleware']; embedder: WikipediaEmbedder; goalEmbedding: number[] }> {
   const embedder = new WikipediaEmbedder(openai)
 
   // Embed goal
@@ -126,9 +129,13 @@ async function createWikiAgent(
   const goalEmbedding = goalResponse.data[0].embedding
 
   // -----------------------------------------------------------------------
-  // Policy stack (operates WITHIN each step, not at the middleware level)
+  // Policy stack — wired via policyMiddleware()
   //
-  // Execution order inside ChainPolicy.decide():
+  // policyMiddleware() constructs a ChainPolicy internally and returns:
+  //   - middleware: handles initialization reset and metadata tracking
+  //   - decideAction(state): call inside step() to get the policy's action
+  //
+  // Execution order inside decideAction() (delegated to ChainPolicy):
   //   1. Reflexes (fast path — can intercept and skip policy entirely):
   //      - LineOfSightReflex: if goal is in current page's links, navigate directly
   //      - SoftLandingReflex: if semantically very close to goal, declare done
@@ -140,29 +147,29 @@ async function createWikiAgent(
   //      - Ranks by cosine similarity to goal embedding
   //      - Stochastically selects from top 3
   // -----------------------------------------------------------------------
-  const boredomGuard = new BoredomGuard<WikiState>(logger)
-  const blacklistGuard = new BlacklistGuard<WikiState>()
-  const reflexLineOfSight = new LineOfSightReflex<WikiState, WikiAction>({
-    getLinks: (s) => s.links,
-    getGoal: (s) => s.goal,
-    createAction: (goal) => ({ type: 'NAVIGATE', title: goal }),
-    logger,
-  })
-  const reflexSoftLanding = new SoftLandingReflex<WikiState, WikiAction>({
-    embedder,
-    goalEmbedding,
-    createDoneAction: (reason) => ({ type: 'DONE', result: reason }),
-    logger,
+  const { middleware: policyMw, decideAction } = policyMiddleware<WikiState, WikiAction, number>({
+    basePolicy: new StochasticHeuristicPolicy(embedder, goalEmbedding),
+    guards: [
+      new BlacklistGuard<WikiState>(),
+      new BoredomGuard<WikiState>(logger),
+    ],
+    reflexes: [
+      new LineOfSightReflex<WikiState, WikiAction>({
+        getLinks: (s) => s.links,
+        getGoal: (s) => s.goal,
+        createAction: (goal) => ({ type: 'NAVIGATE', title: goal }),
+        logger,
+      }),
+      new SoftLandingReflex<WikiState, WikiAction>({
+        embedder,
+        goalEmbedding,
+        createDoneAction: (reason) => ({ type: 'DONE', result: reason }),
+        logger,
+      }),
+    ],
+    ladder: new ProportionalLadder({ gainUp: 0.2, gainDown: 0.2, max: 3 }),
   })
 
-  const basePolicy = new StochasticHeuristicPolicy(embedder, goalEmbedding)
-  const chainPolicy = new ChainPolicy<WikiState, WikiAction, number>(
-    basePolicy,
-    [blacklistGuard, boredomGuard],
-    [reflexLineOfSight, reflexSoftLanding],
-  )
-
-  const ladder = new ProportionalLadder({ gainUp: 0.2, gainDown: 0.2, max: 3 })
   const env = new WikipediaEnv(scenario.start, scenario.end)
 
   let stepCount = 0
@@ -180,19 +187,18 @@ async function createWikiAgent(
 
     async getInitialState(_input: string): Promise<WikiState> {
       const state = await env.observe()
-      chainPolicy.initialize(state)
       stepCount = 0
       return state
     },
 
     // Each step IS one inner-loop iteration:
-    //   chainPolicy.decide() → reflexes → guards → base policy → action
+    //   decideAction(state) → reflexes → guards → base policy → action
     //   env.apply(action) → fetch next Wikipedia page → new state
     //
-    // cyberloop() middleware (budget, kinematics, telemetry) wraps around
-    // this entire step, running beforeStep/afterStep hooks.
+    // cyberloop() middleware (budget, kinematics, telemetry, policy) wraps
+    // around this entire step, running beforeStep/afterStep hooks.
     async step(state: WikiState): Promise<StepOutput<WikiState>> {
-      const action = await chainPolicy.decide(state, ladder)
+      const action = await decideAction(state)
       const nextState = await env.apply(action)
       stepCount++
 
@@ -230,7 +236,7 @@ async function createWikiAgent(
     },
   }
 
-  return { agent, embedder, goalEmbedding }
+  return { agent, middleware: policyMw, embedder, goalEmbedding }
 }
 
 // ---------------------------------------------------------------------------
@@ -257,11 +263,12 @@ async function main() {
   logger.info(`🎯 Goal: ${scenario.start} → ${scenario.end}`)
 
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
-  const { agent, embedder, goalEmbedding } = await createWikiAgent(scenario, openai)
+  const { agent, middleware: policyMw, embedder, goalEmbedding } = await createWikiAgent(scenario, openai)
 
   // Wrap with cyberloop() — middleware operates at the step boundary:
-  //   beforeStep → [step: policy + env] → afterStep
+  //   beforeStep → [step: decideAction + env] → afterStep
   //
+  // policyMw: tracks policy actions in metadata, feeds ladder on feedback
   // kinematicsMiddleware: embeds state each step, tracks semantic drift via
   //   EKF (position/velocity/heading), runs PID controller for corrections
   // telemetryMiddleware: structured logging of step lifecycle
@@ -269,6 +276,7 @@ async function main() {
   const wrapped = cyberloop<WikiState>(agent, {
     budget: { maxSteps: 50 },
     middleware: [
+      policyMw,
       kinematicsMiddleware<WikiState>({
         embedder: embedder as StateEmbedder<WikiState>,
         goalEmbedding,
