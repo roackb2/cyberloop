@@ -1,16 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
-
-// Mock the wikipedia telemetry logger before importing BoredomGuard
-vi.mock('@/adapters/wikipedia/telemetry', () => ({
-  logger: {
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-    debug: vi.fn(),
-    trace: vi.fn(),
-    fatal: vi.fn(),
-  },
-}))
+import { describe, expect, it } from 'vitest'
 
 import { BoredomGuard } from '@/core/policy/guards/boredom'
 
