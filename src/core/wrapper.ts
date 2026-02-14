@@ -10,10 +10,21 @@ import type { Middleware, StepContext, StepResult } from './middleware/types';
 /**
  * Wrap any agent with CyberLoop middleware.
  *
+ * This is the **Assistive SDK** entry point (v2.2). It instruments the inner
+ * loop with composable middleware (budget, policy, kinematics, telemetry)
+ * while leaving the outer loop (failure handling, replanning, orchestration
+ * topology) entirely in user code.
+ *
  * - **Opaque agents** (`AgentLike`): middleware runs once around the entire `run()` call.
  * - **Steppable agents** (`SteppableAgent`): middleware runs around each `step()` call.
  *
  * Returns a new `AgentLike` with the same `run()` signature.
+ *
+ * For the prescriptive inner/outer loop controller where CyberLoop owns the
+ * full plan → explore → evaluate → replan cycle, see {@link Orchestrator}
+ * in `./orchestrator.ts`.
+ *
+ * @see docs/guide/choosing-your-api.md — When to use cyberloop() vs Orchestrator
  *
  * @example
  * ```ts

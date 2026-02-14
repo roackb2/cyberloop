@@ -128,6 +128,14 @@ The SDK exposes the control loop at three levels of granularity:
 
 The legacy `Orchestrator` API remains available for full inner/outer loop control.
 
+### 📖 Which API Should I Use?
+
+**SDK (`cyberloop()`)** — You own the outer loop. CyberLoop instruments the inner loop with composable middleware (budget, policy, kinematics, telemetry). Best for adding control to existing agents or custom orchestration topologies.
+
+**Orchestrator** — CyberLoop owns the full plan → explore → evaluate → replan cycle. Best for research prototyping and reproducing paper benchmarks.
+
+👉 **[Full comparison and decision guide →](docs/guide/choosing-your-api.md)**
+
 ---
 
 ## 📉 Industrial Validation (Legacy)
@@ -193,6 +201,7 @@ yarn examples:github:baseline                      # Legacy baseline
 
 ## 📂 Documentation
 
+* **Guide:** [Choosing Your API — SDK vs Orchestrator](docs/guide/choosing-your-api.md)
 * **Benchmarks:** [Wikipedia Navigation Results](docs/benchmarks/wikipedia/benchmark-wikipedia-navigation.md)
 * **Theory:** [AICL Whitepaper](docs/whitepaper/AICL.md)
 * **Philosophy:** [Immutable Principles](docs/whitepaper/PHILOSOPHY.md)
