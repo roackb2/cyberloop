@@ -57,7 +57,8 @@
     "examples:github:cyberloop": "tsx src/examples/github/agent-demo-cyberloop.ts",
     "examples:github:baseline": "tsx src/examples/github/baseline-demo.ts",
     "examples:github:baseline:cyberloop": "tsx src/examples/github/baseline-demo-cyberloop.ts",
-    "examples:wikipedia": "tsx src/examples/wikipedia/demo.ts"
+    "examples:wikipedia": "tsx src/examples/wikipedia/demo.ts",
+    "examples:wikipedia:cyberloop": "tsx src/examples/wikipedia/demo-cyberloop.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9.37.0",

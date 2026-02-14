@@ -1,3 +1,9 @@
+/**
+ * LEGACY — This is the original Wikipedia navigation demo with all benchmark modes.
+ * Referenced in the paper; kept for backward compatibility.
+ * See demo-cyberloop.ts for the revised version using cyberloop() (cyberloop mode only).
+ */
+
 import 'dotenv/config'
 
 import { OpenAI } from 'openai';
