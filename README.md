@@ -26,6 +26,34 @@ CyberLoop (Blue) dampens this oscillation through closed-loop feedback.</em>
 
 In **v2.1**, we introduce **Semantic Kinematics**: giving agents a "vestibular system" (inner ear) to detect drift in vector space without needing to "think" (query an LLM). This allows agents to navigate complex knowledge graphs using **pure mathematics**—making them 100x faster and cheaper than traditional Chain-of-Thought agents.
 
+In **v2.2**, we refactor the developer surface into a lightweight **Assistive SDK**. Instead of building inside the framework (`Orchestrator` + 7 interfaces), you now wrap your existing agent with `cyberloop(agent)` and progressively opt into middleware. The Orchestrator is preserved for backward compatibility.
+
+---
+
+## ⚡ Quick Start: The SDK (v2.2)
+
+```typescript
+import { cyberloop } from 'cyberloop'
+
+// Tier 1: Wrap any agent — get budget control for free
+const controlled = cyberloop(myAgent, { budget: { maxSteps: 20 } })
+const result = await controlled.run('your query')
+
+// Tier 2: Expose step-level control for middleware
+const controlled = cyberloop(mySteppableAgent, {
+  budget: { maxSteps: 50 },
+  middleware: [telemetryMiddleware(logger), stagnationMiddleware()],
+})
+
+// Tier 3: Advanced — add kinematics (EKF/PID drift detection)
+import { kinematicsMiddleware } from 'cyberloop/advanced'
+const controlled = cyberloop(mySteppableAgent, {
+  middleware: [kinematicsMiddleware({ embedder, goalEmbedding, ... })],
+})
+```
+
+See [examples/quickstart.ts](src/examples/quickstart.ts) for a runnable 30-line demo.
+
 ---
 
 ## 🚀 Hero Demo: Project Ariadne
@@ -41,7 +69,11 @@ Using CyberLoop v2.1, the agent navigates Wikipedia using only **Embeddings + PI
 yarn install
 
 # 2. Run the Deep-Dive Scenario (Coffee -> French Revolution)
-yarn examples:wikipedia revolution
+# v2.2 SDK version (cyberloop wrapper + middleware):
+yarn examples:wikipedia:cyberloop -- --scenario revolution
+
+# Legacy Orchestrator version (all benchmark modes):
+yarn examples:wikipedia -- --mode cyberloop --scenario revolution
 
 ```
 
@@ -83,6 +115,18 @@ The strategic system that handles planning, replanning, and final evaluation.
 * **Mechanism:** LLM (GPT-4o / Claude 3.5).
 * **Trigger:** Only activated when the Inner Loop budget is exhausted or a stable state is found.
 * **Cost:** Expensive, but rarely invoked.
+
+### 3. Developer API: Three Tiers (v2.2)
+
+The SDK exposes the control loop at three levels of granularity:
+
+| Tier | API | You Provide | CyberLoop Adds | Example |
+| --- | --- | --- | --- | --- |
+| **1. Opaque** | `cyberloop(agent)` | Any agent with `run()` | Budget, event hooks | [quickstart.ts](src/examples/quickstart.ts) |
+| **2. Steppable** | `cyberloop(steppableAgent)` | Agent with `step()`, `isDone()` | Per-step middleware (telemetry, stagnation, policy) | [middleware-demo.ts](src/examples/middleware-demo.ts) |
+| **3. Advanced** | `+ kinematicsMiddleware()` | Embedder + goal vector | EKF/PID drift detection | [demo-cyberloop.ts](src/examples/wikipedia/demo-cyberloop.ts) |
+
+The legacy `Orchestrator` API remains available for full inner/outer loop control.
 
 ---
 
@@ -127,13 +171,21 @@ OPENAI_API_KEY=sk-...
 ### Available Demos
 
 ```bash
-# v2.1: Wikipedia Deep-Dive (Semantic Kinematics)
-# Scenarios: 'tech' (Jacquard -> CPU) or 'revolution' (Coffee -> French Revolution)
-yarn examples:wikipedia revolution
+# --- SDK Examples (v2.2) ---
+yarn examples:quickstart                          # Tier 1: opaque agent
+yarn examples:middleware                           # Tier 2: steppable + custom middleware
+yarn examples:openai-agents                        # OpenAI Agents SDK compatibility
 
-# v1.0: GitHub Search (Deterministic State Machine)
-# A classic example of bounded exploration using Probes & Ladders
-yarn examples:github
+# --- Wikipedia Navigation (v2.1 Semantic Kinematics) ---
+yarn examples:wikipedia:cyberloop                  # SDK version (cyberloop wrapper)
+yarn examples:wikipedia:cyberloop -- --scenario revolution
+yarn examples:wikipedia                            # Legacy Orchestrator (all modes)
+
+# --- GitHub Search (v1.0 Deterministic State Machine) ---
+yarn examples:github:cyberloop                     # SDK version (steppable agent)
+yarn examples:github:baseline:cyberloop            # SDK version (OpenAI Agent)
+yarn examples:github                               # Legacy Orchestrator
+yarn examples:github:baseline                      # Legacy baseline
 
 ```
 
@@ -143,13 +195,15 @@ yarn examples:github
 
 * **Benchmarks:** [Wikipedia Navigation Results](docs/benchmarks/wikipedia/benchmark-wikipedia-navigation.md)
 * **Theory:** [AICL Whitepaper](docs/whitepaper/AICL.md)
+* **Philosophy:** [Immutable Principles](docs/whitepaper/PHILOSOPHY.md)
+* **Evolution:** [Why the architecture changed](docs/whitepaper/EVOLUTION.md)
 * **Architecture:** [Inner/Outer Loop Spec](docs/architecture/inner-outer-loop.md)
 * **Academic (v2.1):** Zenodo Record - [The Brain Needs a Body (Liang, 2026)](https://zenodo.org/records/18138161)
 * **Academic (v1.0):** Zenodo Record - [AICL Whitepaper (Liang, 2025)](https://zenodo.org/records/17835680)
 
 ---
 
-> **Status:** 🧪 *v2.1 Research Preview*
+> **Status:** 🧪 *v2.2 Assistive SDK*
 > Uncontrolled intelligence grows powerful but fragile.
 > Controlled intelligence grows stable — and endures.
 

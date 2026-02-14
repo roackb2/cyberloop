@@ -7,6 +7,7 @@ This directory contains Architecture Decision Records (ADRs) for the CyberLoop f
 An Architecture Decision Record (ADR) is a document that captures an important architectural decision made along with its context and consequences.
 
 ADRs help us:
+
 - **Remember why** we made certain decisions
 - **Communicate** architectural choices to new team members
 - **Track** the evolution of the architecture over time
@@ -16,6 +17,7 @@ ADRs help us:
 ## When to Write an ADR
 
 Write an ADR when you make a decision that:
+
 - Affects the structure, behavior, or quality attributes of the system
 - Is difficult or expensive to reverse
 - Impacts multiple components or stakeholders
@@ -23,6 +25,7 @@ Write an ADR when you make a decision that:
 - Deviates from established patterns or conventions
 
 Examples:
+
 - Choosing a core architecture pattern (e.g., Inner/Outer Loop)
 - Selecting a major technology or framework
 - Defining interfaces or contracts
@@ -68,6 +71,7 @@ NNNN-short-title-in-kebab-case.md
 ```
 
 Examples:
+
 - `0001-inner-outer-loop-architecture.md`
 - `0002-budget-tracking-strategy.md`
 - `0003-probe-policy-interface.md`
@@ -78,10 +82,12 @@ Examples:
 |--------|-------|--------|------|
 | [0000](0000-adr-template.md) | ADR Template | Template | - |
 | [0001](0001-inner-outer-loop-architecture.md) | Inner/Outer Loop Architecture | Accepted | 2025-10-11 |
+| [0002](0002-assistive-sdk-cyberloop-wrapper.md) | Assistive SDK — cyberloop() Wrapper & Middleware | Accepted | 2026-02-14 |
 
 ## Best Practices
 
-### Do:
+### Do
+
 - ✅ Write ADRs **as decisions are made**, not after the fact
 - ✅ Keep them **concise** but complete (aim for 1-3 pages)
 - ✅ Focus on **why**, not just what
@@ -90,7 +96,8 @@ Examples:
 - ✅ Update status when decisions change
 - ✅ Link to related ADRs and documents
 
-### Don't:
+### Don't
+
 - ❌ Write ADRs for trivial decisions
 - ❌ Delete or modify old ADRs (supersede them instead)
 - ❌ Use ADRs as detailed design documents (keep them high-level)
@@ -100,10 +107,12 @@ Examples:
 ## Tools and Resources
 
 ### ADR Tools
+
 - [adr-tools](https://github.com/npryce/adr-tools) - Command-line tools for ADRs
 - [log4brains](https://github.com/thomvaill/log4brains) - Web UI for ADRs
 
 ### Further Reading
+
 - [Documenting Architecture Decisions](https://cognitect.com/blog/2011/11/15/documenting-architecture-decisions) - Michael Nygard (original ADR concept)
 - [MADR](https://adr.github.io/madr/) - Markdown Any Decision Records template
 - [ADR GitHub Organization](https://adr.github.io/) - Collection of ADR resources
@@ -122,6 +131,7 @@ When adding a new ADR:
 ## Questions?
 
 If you're unsure whether to write an ADR, ask yourself:
+
 - Will future developers wonder why we made this choice?
 - Is this decision hard to reverse?
 - Does this affect multiple parts of the system?

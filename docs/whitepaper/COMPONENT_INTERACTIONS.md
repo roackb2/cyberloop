@@ -1,13 +1,14 @@
 # AICL Component Interactions Guide
 
 **Purpose:** This document explains **how components interact** in the AICL framework, answering questions like:
+
 - Who uses Policy? How?
 - How does Orchestrator coordinate everything?
 - How do capabilities influence decisions?
 - What's the data flow between components?
 
-**For developers:** Understand the wiring and data flow  
-**For IDE assistants:** Know how to correctly use each component  
+**For developers:** Understand the wiring and data flow
+**For IDE assistants:** Know how to correctly use each component
 **For researchers:** See the practical implementation of theory
 
 ---
@@ -80,6 +81,7 @@ const result = await orchestrator.run("Find Node.js graceful shutdown libraries"
 ```
 
 **Data flow:**
+
 ```
 Application
     ↓ (user input: string)
@@ -89,6 +91,7 @@ Application
 ```
 
 **Key points:**
+
 - Application provides all components (dependency injection)
 - Orchestrator handles all coordination
 - Application receives final output + execution logs
@@ -108,6 +111,7 @@ const initialState = await planner.plan(userInput)
 ```
 
 **Data flow:**
+
 ```
 Orchestrator
     ↓ (userInput: string)
@@ -126,6 +130,7 @@ const output = await planner.evaluate(finalState, history)
 ```
 
 **Data flow:**
+
 ```
 Orchestrator
     ↓ (finalState: State, history: State[])
@@ -144,6 +149,7 @@ const newState = await planner.replan(failedState, history)
 ```
 
 **Key points:**
+
 - Planner is **expensive** (2.0 units per call)
 - Planner is **infrequent** (2-3 calls total)
 - Planner uses **LLM** for strategic reasoning
@@ -172,6 +178,7 @@ const isStable = probePolicy.isStable(currentState)
 ```
 
 **Data flow:**
+
 ```
 Orchestrator
     ↓ (currentState: State)
@@ -190,6 +197,7 @@ const action = await probePolicy.decide(currentState, ladder)
 ```
 
 **Data flow:**
+
 ```
 Orchestrator
     ↓ (currentState: State, ladder: Ladder)
@@ -210,6 +218,7 @@ probePolicy.adapt(feedback, ladder)
 ```
 
 **Key points:**
+
 - ProbePolicy is **cheap** (0.1 units per call)
 - ProbePolicy is **frequent** (10-50 calls per run)
 - ProbePolicy is **deterministic** (no LLM calls!)
@@ -232,6 +241,7 @@ const probeResults = await Promise.all(
 ```
 
 **Data flow:**
+
 ```
 Orchestrator
     ↓ (currentState: State)
@@ -258,22 +268,23 @@ class DeterministicSearchPolicy {
     const recentProbes = state.probes?.slice(-3) || []
     const hasNoHits = recentProbes.some(p => !p.pass && p.reason === "no-hits")
     const hasDropped = recentProbes.some(p => !p.pass && p.reason === "hit-drop-to-zero")
-    
+
     // Use probe signals as gradient information
     if (hasNoHits || hasDropped) {
       return this.broaden(state.filters)  // Probe says: "too narrow!"
     }
-    
+
     // Use other gradients (hits, ladder)
     if (state.hits > 30) return this.narrow(state.filters)
     if (state.hits < 10) return this.broaden(state.filters)
-    
+
     return { type: 'done' }
   }
 }
 ```
 
 **Key points:**
+
 - Probes are **very cheap** (0.05 units per probe)
 - Probes are **synchronous** (no async operations)
 - Probes provide **directional signals** (not just pass/fail)
@@ -294,6 +305,7 @@ const nextState = await env.apply(action)
 ```
 
 **Data flow:**
+
 ```
 Orchestrator
     ↓ (action: { type: 'narrow', payload: { exact: ['stars:>50'] } })
@@ -312,10 +324,10 @@ class GitHubEnvironment implements Environment<GhState, GhAction> {
     if (action.type === 'narrow') {
       this.filters.minStars = 50  // Apply narrowing
     }
-    
+
     // Execute search
     const results = await this.api.search(this.query, this.filters)
-    
+
     // Return new state
     return {
       query: this.query,
@@ -329,6 +341,7 @@ class GitHubEnvironment implements Environment<GhState, GhAction> {
 ```
 
 **Key points:**
+
 - Environment is **domain-specific** (GitHub, filesystem, database, etc.)
 - Environment handles **external interactions** (API calls, file I/O)
 - Environment returns **new state** (immutable)
@@ -349,6 +362,7 @@ const feedback = await evaluator.evaluate(prevState, nextState)
 ```
 
 **Data flow:**
+
 ```
 Orchestrator
     ↓ (prevState: { hits: 100 }, nextState: { hits: 25 })
@@ -367,7 +381,7 @@ class DeltaScoreEvaluator implements Evaluator<GhState, number> {
     const nextScore = this.score(next)
     return (nextScore - prevScore) / Math.max(prevScore, 1)
   }
-  
+
   private score(state: GhState): number {
     // Closer to target range (10-30) is better
     if (state.hits >= 10 && state.hits <= 30) return 1.0
@@ -378,6 +392,7 @@ class DeltaScoreEvaluator implements Evaluator<GhState, number> {
 ```
 
 **Key points:**
+
 - Evaluator is **cheap** (0.01 units, just computation)
 - Evaluator is **synchronous** (no I/O)
 - Evaluator returns **scalar feedback** (progress gradient)
@@ -398,6 +413,7 @@ ladder.update(feedback)
 ```
 
 **Data flow:**
+
 ```
 Orchestrator
     ↓ (feedback: 0.5)  // Positive = improving
@@ -415,7 +431,7 @@ class AgentQueryPolicy {
   decide(state: State, ladder: Ladder): Action {
     // Read exploration intensity
     const intensity = ladder.level()  // 0.0 - 1.0
-    
+
     // Use intensity to decide strategy
     if (intensity < 0.3) {
       return { type: 'narrow' }  // Conservative
@@ -433,15 +449,15 @@ class AgentQueryPolicy {
 ```typescript
 class ProportionalLadder implements Ladder<number> {
   private currentLevel = 0.5
-  
+
   level(): number {
     return this.currentLevel
   }
-  
+
   update(feedback: number): void {
     // Positive feedback → increase exploration
     // Negative feedback → decrease exploration
-    this.currentLevel = Math.max(0, Math.min(1, 
+    this.currentLevel = Math.max(0, Math.min(1,
       this.currentLevel + 0.1 * feedback
     ))
   }
@@ -449,6 +465,7 @@ class ProportionalLadder implements Ladder<number> {
 ```
 
 **Key points:**
+
 - Ladder is **stateful** (maintains exploration level)
 - Ladder is **cheap** (0 cost, just state update)
 - Ladder provides **intensity gradient** (scalar 0-1)
@@ -481,6 +498,7 @@ if (budget.shouldStop()) {
 ```
 
 **Data flow:**
+
 ```
 Orchestrator
     ↓ (records: innerLoop.record(0.15))
@@ -499,7 +517,7 @@ class ControlBudget {
     public innerLoop: BudgetTracker,  // 20 units
     public outerLoop: BudgetTracker,  // 6 units
   ) {}
-  
+
   shouldStop(): boolean {
     return this.innerLoop.shouldStop() || this.outerLoop.shouldStop()
   }
@@ -507,6 +525,7 @@ class ControlBudget {
 ```
 
 **Key points:**
+
 - Budget is **dual-layer** (inner + outer)
 - Budget is **accounting only** (no logic)
 - Budget provides **hard limits** (prevents runaway)
@@ -650,28 +669,29 @@ class RuleBasedStrategySelector {
     policies: Policy[]
   }): { policy: Policy } {
     // Filter policies that can handle this failure
-    const capable = policies.filter(p => 
+    const capable = policies.filter(p =>
       p.capabilities()?.handles?.includes(input.failure)
     )
-    
+
     // Filter policies effective at current ladder level
     const inRange = capable.filter(p => {
       const [min, max] = p.capabilities()?.explorationRange || [0, Infinity]
       return input.ladderLevel >= min && input.ladderLevel <= max
     })
-    
+
     // Pick cheapest policy that fits budget
     const affordable = inRange.filter(p => {
       const cost = p.capabilities()?.cost?.expected || 0
       return cost <= input.budgetRemaining
     })
-    
+
     return { policy: affordable[0] || policies[0] }
   }
 }
 ```
 
 **Key points:**
+
 - Capabilities are **optional** (not used in basic scenarios)
 - Capabilities enable **dynamic routing** (when multiple policies available)
 - Capabilities are **declarative** (no runtime overhead)
@@ -689,25 +709,25 @@ ProbePolicy combines multiple gradient sources:
 decide(state: State, ladder: Ladder): Action {
   // Gradient 1: Exploration intensity (Ladder)
   const intensity = ladder.level()
-  
+
   // Gradient 2: Feasibility signals (Probes)
   const probeSignals = state.probes?.slice(-3) || []
   const hasNoHits = probeSignals.some(p => p.reason === "no-hits")
-  
+
   // Gradient 3: Progress (State)
   const hits = state.hits
-  
+
   // Gradient 4: History (Trajectory)
   const recentHits = state.history?.slice(-3).map(h => h.hits) || []
-  const isOscillating = recentHits.length > 2 && 
+  const isOscillating = recentHits.length > 2 &&
     recentHits[0] === recentHits[2]
-  
+
   // Synthesize decision from all gradients
   if (hasNoHits) return this.broaden()      // Probe says: too narrow
   if (hits > 30) return this.narrow()        // State says: too broad
   if (isOscillating) return this.rephrase()  // History says: stuck
   if (intensity > 0.7) return this.explore() // Ladder says: be aggressive
-  
+
   return { type: 'done' }
 }
 ```
@@ -720,21 +740,21 @@ Orchestrator provides strategic checkpoints:
 async run(userInput: string) {
   // Checkpoint 1: Initial strategy
   const initialState = await planner.plan(userInput)
-  
+
   // Fast reflexive exploration
   const result = await this.exploreInnerLoop(initialState)
-  
+
   // Checkpoint 2: Evaluate results
   if (result.status === 'stable') {
     return await planner.evaluate(result.state)
   }
-  
+
   // Checkpoint 3: Replan if needed
   const newState = await planner.replan(result.state)
   if (newState) {
     return await this.exploreInnerLoop(newState)
   }
-  
+
   return "Exploration exhausted"
 }
 ```
@@ -747,13 +767,13 @@ Environment returns new state (functional style):
 async apply(action: Action): Promise<State> {
   // Don't mutate current state
   const newFilters = { ...this.filters }
-  
+
   if (action.type === 'narrow') {
     newFilters.minStars = 50
   }
-  
+
   const results = await this.api.search(this.query, newFilters)
-  
+
   // Return new state object
   return {
     query: this.query,
@@ -778,7 +798,7 @@ const logs: StepLog[] = []
 for (let t = 0; t < maxSteps; t++) {
   const probeResult = await this.runProbes(state)
   const isStable = this.probePolicy.isStable(state)
-  
+
   logs.push({
     t,
     state,
@@ -787,9 +807,9 @@ for (let t = 0; t < maxSteps; t++) {
     ladderLevel: this.ladder.level(),
     budgetRemaining: this.budget.innerLoop.remaining()
   })
-  
+
   if (isStable) break
-  
+
   const action = await this.probePolicy.decide(state, this.ladder)
   // ...
 }
@@ -809,7 +829,7 @@ class DebugProbePolicy {
       hits: state.hits,
       historyLength: state.history?.length
     })
-    
+
     // ... decision logic
   }
 }
@@ -828,18 +848,111 @@ console.log('After decision:', budget.innerLoop.remaining())
 
 ---
 
+## SDK Mode: Component Interactions (v2.2)
+
+In v2.2, the `cyberloop()` wrapper provides an alternative interaction model. Instead of the Orchestrator coordinating all components, the **user defines the agent** and CyberLoop wraps it with composable middleware.
+
+### Component Roles (SDK Mode)
+
+| Component | Primary Role | Used By | Uses |
+|-----------|--------------|---------|------|
+| **cyberloop()** | Wraps agent with control | Application code | Agent, MiddlewareRunner |
+| **SteppableAgent** | User-defined step logic | cyberloop() wrapper | Environment, decideAction |
+| **MiddlewareRunner** | Runs middleware chain | cyberloop() wrapper | All middleware |
+| **budgetMiddleware** | Step counting + halting | MiddlewareRunner (auto) | StepContext |
+| **policyMiddleware** | Policy decision + lifecycle | MiddlewareRunner | ChainPolicy, Ladder |
+| **kinematicsMiddleware** | Drift detection (EKF/PID) | MiddlewareRunner | PhysicsEngine, PIDController |
+| **telemetryMiddleware** | Structured logging | MiddlewareRunner | Logger |
+
+### Architecture Overview (SDK Mode)
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                        Application                          │
+│                             │                               │
+│                             ↓                               │
+│                    cyberloop(agent, opts)                    │
+│                             │                               │
+└─────────────────────────────┼───────────────────────────────┘
+                              │
+        ┌─────────────────────┼─────────────────────┐
+        │                     │                     │
+        ↓                     ↓                     ↓
+┌───────────────┐    ┌────────────────┐    ┌──────────────┐
+│  Middleware    │    │  Agent Step    │    │   Lifecycle   │
+│  (per-step)   │    │  (user code)   │    │              │
+│               │    │                │    │ • setup()     │
+│ • budget      │    │ • step(state)  │    │ • teardown()  │
+│ • policy      │    │ • isDone()     │    │ • on.onHalt() │
+│ • kinematics  │    │ • toResult()   │    │              │
+│ • telemetry   │    │                │    │              │
+└───────────────┘    └────────────────┘    └──────────────┘
+```
+
+### Execution Flow (SDK Mode)
+
+```
+Application
+    ↓ cyberloop(agent, { budget, middleware })
+cyberloop()
+    ↓ detects SteppableAgent (has step/isDone/toResult)
+    ↓ builds MiddlewareRunner with [budgetMw, ...userMw, telemetryMw]
+    ↓ runner.setup({ input })
+    ↓ agent.getInitialState(input)
+    ↓
+Step Loop:
+    ↓ runner.beforeStep(ctx)          ← middleware in order
+    │    ├─ budgetMiddleware: check remaining, halt if exceeded
+    │    ├─ policyMiddleware: (no-op in beforeStep)
+    │    └─ kinematicsMiddleware: embed state, EKF update, PID check
+    ↓ agent.step(state)               ← user code
+    │    ├─ decideAction(state)        ← from policyMiddleware
+    │    │    ├─ reflexes check (fast path)
+    │    │    ├─ guards modify state
+    │    │    └─ base policy decides
+    │    └─ env.apply(action)          ← domain-specific
+    ↓ runner.afterStep(ctx, result)    ← middleware in reverse order
+    │    ├─ kinematicsMiddleware: log snapshot
+    │    ├─ policyMiddleware: store action in metadata, feed ladder
+    │    └─ budgetMiddleware: increment step count
+    ↓ agent.isDone(state)?
+    │    ├─ yes → break
+    │    └─ no → next iteration
+    ↓
+    ↓ runner.teardown({ reason })
+    ↓ agent.toResult(state)
+    ↓
+Application
+```
+
+### Key Differences from Orchestrator Mode
+
+| Aspect | Orchestrator Mode | SDK Mode (v2.2) |
+|--------|-------------------|------------------|
+| **Entry point** | `new Orchestrator({...}).run()` | `cyberloop(agent).run()` |
+| **Who defines step logic** | Orchestrator | User (SteppableAgent) |
+| **Control composition** | Constructor injection | Middleware chain |
+| **Adding new concerns** | Modify Orchestrator or subclass | Add middleware |
+| **Minimum setup** | 7+ interfaces | 1 interface (AgentLike) |
+| **Backward compatible** | N/A (original) | Yes (Orchestrator preserved) |
+
+---
+
 ## Summary
 
 **Key Takeaways:**
 
-1. **Orchestrator coordinates everything** - Single entry point for all interactions
-2. **Hierarchical layers** - Outer (strategic, expensive) vs Inner (reflexive, cheap)
-3. **Gradient synthesis** - ProbePolicy combines Ladder + Probes + State + History
+1. **Two paths available** - Orchestrator (legacy, full control) and cyberloop() (SDK, progressive)
+2. **Hierarchical layers** - Both paths preserve inner/outer loop separation
+3. **Gradient synthesis** - ProbePolicy/policyMiddleware combines Ladder + Probes + State + History
 4. **Immutable state** - Environment returns new state objects
-5. **Explicit costs** - Budget tracks every operation
-6. **Capabilities are optional** - Used only for advanced routing scenarios
+5. **Explicit costs** - Budget tracks every operation (Orchestrator) or step (middleware)
+6. **Composable middleware** - SDK mode enables plug-and-play control concerns
+7. **Capabilities are optional** - Used only for advanced routing scenarios (Orchestrator mode)
 
 **Data Flow Summary:**
+
+**Orchestrator Mode:**
 
 ```
 Application → Orchestrator
@@ -859,16 +972,36 @@ Planner (evaluate) → output
 Application
 ```
 
+**SDK Mode (v2.2):**
+
+```
+Application → cyberloop(agent, { middleware })
+    ↓
+agent.getInitialState(input)
+    ↓
+Step Loop:
+    beforeStep → [middleware chain]
+    agent.step(state) → [decideAction + env.apply]
+    afterStep → [middleware chain, reverse]
+    isDone? → break or continue
+    ↓
+agent.toResult(state)
+    ↓
+Application
+```
+
 ---
 
 **For more details:**
+
 - **Philosophy:** See [PHILOSOPHY.md](PHILOSOPHY.md)
 - **Evolution:** See [EVOLUTION.md](EVOLUTION.md)
 - **Current spec:** See [AICL.md](AICL.md)
-- **Code:** See `/src/core/orchestrator.ts`
+- **Orchestrator code:** See `src/core/orchestrator.ts`
+- **SDK code:** See `src/core/wrapper.ts`
 
 ---
 
-**Last Updated:** 2025-10-24  
-**Maintained by:** CyberLoop Project  
+**Last Updated:** 2026-02-14
+**Maintained by:** CyberLoop Project
 **License:** Apache-2.0
