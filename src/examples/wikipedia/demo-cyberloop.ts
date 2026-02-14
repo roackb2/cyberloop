@@ -1,8 +1,35 @@
 /**
  * Revised Wikipedia Navigation — CyberLoop mode using cyberloop() wrapper
  *
- * Implements the full CyberLoop stack (stochastic policy + kinematics + guards + reflexes)
- * as a SteppableAgent wrapped with cyberloop() middleware.
+ * ## Architecture Note: Inner-Loop Demo (No Real Agent)
+ *
+ * Unlike the quickstart or openai-agents-demo (which wrap a real LLM agent),
+ * this demo has NO agent making decisions. Instead, each "step" is a
+ * **deterministic inner-loop iteration**: the policy embeds Wikipedia link
+ * candidates, ranks them by cosine similarity to the goal, and picks one.
+ *
+ * In the original 2-level architecture:
+ *   - **Outer loop**: Planner (LLM) decides high-level strategy
+ *   - **Inner loop**: Policy (deterministic/heuristic) executes search steps
+ *
+ * Here we only port the inner loop as a SteppableAgent. Each step() call:
+ *   1. ChainPolicy runs reflexes (line-of-sight, soft-landing) — fast intercepts
+ *   2. ChainPolicy runs guards (blacklist, boredom) — state modifiers
+ *   3. Base policy (StochasticHeuristicPolicy) embeds candidates, ranks, selects
+ *   4. WikipediaEnv applies the action (fetches next Wikipedia page)
+ *
+ * The cyberloop() middleware layer (budget, kinematics, telemetry) wraps around
+ * these inner-loop steps, providing observation and control at the step boundary.
+ *
+ * ## Why guards/reflexes are inside step(), not middleware
+ *
+ * Guards and reflexes operate WITHIN the policy decision (they modify state or
+ * intercept actions before the policy runs). Middleware operates AROUND the step
+ * (beforeStep/afterStep). These are different abstraction levels:
+ *   - Middleware: "before/after the agent acts" — budget, telemetry, kinematics
+ *   - Guards/Reflexes: "before/during the policy decides" — blacklist, boredom
+ *
+ * A future policyMiddleware() could lift this wiring into the middleware chain.
  *
  * Only the main "cyberloop" mode is ported here. For other benchmark modes
  * (greedy, boredom, cot, etc.), see the legacy demo.ts.
@@ -98,7 +125,21 @@ async function createWikiAgent(
   })
   const goalEmbedding = goalResponse.data[0].embedding
 
-  // Build policy stack (same as legacy cyberloop mode)
+  // -----------------------------------------------------------------------
+  // Policy stack (operates WITHIN each step, not at the middleware level)
+  //
+  // Execution order inside ChainPolicy.decide():
+  //   1. Reflexes (fast path — can intercept and skip policy entirely):
+  //      - LineOfSightReflex: if goal is in current page's links, navigate directly
+  //      - SoftLandingReflex: if semantically very close to goal, declare done
+  //   2. Guards (modify state before policy sees it):
+  //      - BlacklistGuard: filters out previously-visited/bad links
+  //      - BoredomGuard: penalizes recently-seen topics to encourage exploration
+  //   3. Base policy (StochasticHeuristicPolicy):
+  //      - Embeds top 50 link candidates via OpenAI embeddings API
+  //      - Ranks by cosine similarity to goal embedding
+  //      - Stochastically selects from top 3
+  // -----------------------------------------------------------------------
   const boredomGuard = new BoredomGuard<WikiState>(logger)
   const blacklistGuard = new BlacklistGuard<WikiState>()
   const reflexLineOfSight = new LineOfSightReflex<WikiState, WikiAction>({
@@ -127,6 +168,7 @@ async function createWikiAgent(
   let stepCount = 0
 
   const agent: SteppableAgent<WikiState, string, WikiResult> = {
+    // Opaque fallback — not used when cyberloop() detects SteppableAgent
     run(input: string): Promise<WikiResult> {
       return Promise.resolve({
         output: `Navigation: ${input}`,
@@ -143,6 +185,12 @@ async function createWikiAgent(
       return state
     },
 
+    // Each step IS one inner-loop iteration:
+    //   chainPolicy.decide() → reflexes → guards → base policy → action
+    //   env.apply(action) → fetch next Wikipedia page → new state
+    //
+    // cyberloop() middleware (budget, kinematics, telemetry) wraps around
+    // this entire step, running beforeStep/afterStep hooks.
     async step(state: WikiState): Promise<StepOutput<WikiState>> {
       const action = await chainPolicy.decide(state, ladder)
       const nextState = await env.apply(action)
@@ -211,7 +259,13 @@ async function main() {
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
   const { agent, embedder, goalEmbedding } = await createWikiAgent(scenario, openai)
 
-  // Wrap with cyberloop() + kinematicsMiddleware
+  // Wrap with cyberloop() — middleware operates at the step boundary:
+  //   beforeStep → [step: policy + env] → afterStep
+  //
+  // kinematicsMiddleware: embeds state each step, tracks semantic drift via
+  //   EKF (position/velocity/heading), runs PID controller for corrections
+  // telemetryMiddleware: structured logging of step lifecycle
+  // budget: hard limit on total steps (prevents infinite navigation)
   const wrapped = cyberloop<WikiState>(agent, {
     budget: { maxSteps: 50 },
     middleware: [
