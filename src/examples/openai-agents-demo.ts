@@ -11,7 +11,7 @@
 
 import 'dotenv/config'
 
-import { Agent, run, tool } from '@openai/agents'
+import { Agent, run as runAgent, tool } from '@openai/agents'
 import { Command } from 'commander'
 
 import type { AgentResult } from '@/core/agent-protocol'
@@ -86,7 +86,7 @@ function invocationTracker(): Middleware<unknown> {
 const wrapped = cyberloop<unknown>(
   {
     async run(input: string): Promise<AgentResult> {
-      const result = await run(agent, input)
+      const result = await runAgent(agent, input)
       return { output: result.finalOutput ?? '' }
     },
   },
