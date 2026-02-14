@@ -1,3 +1,9 @@
+/**
+ * LEGACY — This is the original AICL demo using the Orchestrator directly.
+ * Referenced in the paper; kept for backward compatibility.
+ * See agent-demo-cyberloop.ts for the revised version using cyberloop().
+ */
+
 import 'dotenv/config'
 
 import { DeterministicSearchPolicy } from '@/adapters/github/deterministic-policy'

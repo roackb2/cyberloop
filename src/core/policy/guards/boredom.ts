@@ -1,4 +1,4 @@
-import { logger } from '../../../adapters/wikipedia/telemetry';
+import type { Logger } from '../../interfaces';
 import type { PolicyGuard } from '../chain';
 
 interface StateWithHistory {
@@ -9,6 +9,8 @@ interface StateWithHistory {
 
 export class BoredomGuard<S extends StateWithHistory> implements PolicyGuard<S> {
   public name = 'boredom-guard';
+
+  constructor(private logger?: Logger) { }
 
   private stopWords = new Set([
     'the', 'of', 'in', 'and', 'a', 'an', 'to', 'for', 'on', 'with', 'at', 'by', 'from',
@@ -57,7 +59,7 @@ export class BoredomGuard<S extends StateWithHistory> implements PolicyGuard<S> 
         weights[link] = currentWeight * penaltyMultiplier;
         hasUpdates = true;
 
-        logger?.info(`[BoredomGuard] 📉 Penalizing '${link}': penalty=${boredomPenalty.toFixed(2)}, newWeight=${penaltyMultiplier.toFixed(2)}`);
+        this.logger?.info(`[BoredomGuard] 📉 Penalizing '${link}': penalty=${boredomPenalty.toFixed(2)}, newWeight=${penaltyMultiplier.toFixed(2)}`);
       }
     }
 

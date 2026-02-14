@@ -207,4 +207,29 @@ When implementing v2.1, follow this sequence to avoid breaking existing code:
 * [ ] `VectorRejection` must be used for error calculation (not Euclidean distance).
 
 ---
+
+## 6. SDK Integration (v2.2)
+
+In v2.2, the kinematics system is also available as **middleware** for the `cyberloop()` wrapper, providing an alternative to the `KinematicProbePolicy` approach described in Section 4.2.
+
+```typescript
+import { kinematicsMiddleware } from 'cyberloop/advanced'
+
+const controlled = cyberloop(agent, {
+  middleware: [
+    kinematicsMiddleware({
+      embedder,          // StateEmbedder<S> — same as Section 3.2
+      goalEmbedding,     // Vector3D — task origin τ
+      pid: { Kp: 0.5, Ki: 0.0, Kd: 0.1, stabilityThreshold: 0.6 },
+      physics: { processNoise: 0.1, measureNoise: 0.5 },
+    }),
+  ],
+})
+```
+
+**Key difference:** `kinematicsMiddleware` **observes and annotates** (via `metadata['kinematics']` and `metadata['kinematicsCorrection']`) but does not halt or override actions. It is a thin adapter over the same `PhysicsEngine` and `PIDController` described in Sections 4.1 and 4.2.
+
+The `KinematicProbePolicy` (Section 4.2) remains available for Orchestrator-based usage where the policy itself needs to act on corrections.
+
+---
 *End of Technical Spec v2.1*

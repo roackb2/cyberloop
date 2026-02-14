@@ -2,8 +2,8 @@
 
 **Purpose:** This document explains **why** AICL evolved from version to version, showing how each change **preserved and strengthened** the core philosophy.
 
-**For developers:** Understand the reasoning behind architectural decisions.  
-**For researchers:** See how theory evolved through practical implementation.  
+**For developers:** Understand the reasoning behind architectural decisions.
+**For researchers:** See how theory evolved through practical implementation.
 **For IDE assistants:** Know which principles are stable vs. which details changed.
 
 ---
@@ -15,14 +15,18 @@
    ↓
 2025-03  v0.2  Added Gradient Information
    ↓
-2025-10  v0.3  Hierarchical Control (CURRENT)
+2025-10  v0.3  Hierarchical Control
+   ↓
+2025-12  v2.1  Semantic Kinematics (EKF/PID)
+   ↓
+2026-02  v2.2  Assistive SDK (CURRENT)
 ```
 
 ---
 
 ## v0.1 → v0.2: Adding Gradient Information
 
-**Date:** 2025-03  
+**Date:** 2025-03
 **Status:** v0.2 superseded by v0.3
 
 ### What Changed
@@ -108,10 +112,10 @@ const { policy } = selector.select({
 
 ### Philosophy Preserved
 
-✅ **Gradient-Guided:** Enhanced from 1 source (Ladder) to 3 sources (Ladder + Probes + Budget)  
-✅ **Bounded:** Made explicit through BudgetTracker  
-✅ **Modular:** Added components without breaking existing ones  
-✅ **Convergence:** Budget provides hard stopping criteria  
+✅ **Gradient-Guided:** Enhanced from 1 source (Ladder) to 3 sources (Ladder + Probes + Budget)
+✅ **Bounded:** Made explicit through BudgetTracker
+✅ **Modular:** Added components without breaking existing ones
+✅ **Convergence:** Budget provides hard stopping criteria
 ✅ **Hierarchical:** (Not yet, but foundation laid)
 
 ### Impact
@@ -135,7 +139,7 @@ These limitations led to v0.3...
 
 ## v0.2 → v0.3: Hierarchical Control
 
-**Date:** 2025-10  
+**Date:** 2025-10
 **Status:** CURRENT
 
 ### What Changed
@@ -209,10 +213,10 @@ class Policy {
   async decide(state, ladder) {
     // Strategic reasoning (expensive)
     const strategy = await this.llm.plan(state)
-    
+
     // Tactical adjustment (cheap)
     const action = this.adjustFilters(state, strategy)
-    
+
     // Mixed concerns!
   }
 }
@@ -264,10 +268,10 @@ for (let t = 0; t < maxSteps; t++) {
 
 ### Philosophy Preserved (and Strengthened!)
 
-✅ **Gradient-Guided:** Now **multi-dimensional** (Ladder + Probes + History)  
-✅ **Hierarchical:** Made **explicit** through inner/outer loops  
-✅ **Modular:** **Enhanced** - ProbePolicy and Planner are independently replaceable  
-✅ **Bounded:** **Dual-layer** budgets (inner + outer)  
+✅ **Gradient-Guided:** Now **multi-dimensional** (Ladder + Probes + History)
+✅ **Hierarchical:** Made **explicit** through inner/outer loops
+✅ **Modular:** **Enhanced** - ProbePolicy and Planner are independently replaceable
+✅ **Bounded:** **Dual-layer** budgets (inner + outer)
 ✅ **Convergence:** **Explicit** through `isStable()` + budget
 
 ### Impact
@@ -284,6 +288,7 @@ for (let t = 0; t < maxSteps; t++) {
 | **Duration** | 15s | 25s | ⚠️ Slower (but thorough) |
 
 **Key Insights:**
+
 - Same LLM cost, better coverage through systematic exploration
 - Predictable resource usage enables autonomous operation
 - Deterministic inner loop enables reproducibility
@@ -305,7 +310,7 @@ Advanced scenarios can add these when needed.
 
 ### Lesson 1: Start Simple, Add Complexity When Needed
 
-**v0.1 → v0.2:** Added gradient information when single Ladder proved insufficient  
+**v0.1 → v0.2:** Added gradient information when single Ladder proved insufficient
 **v0.2 → v0.3:** Added hierarchy when flat architecture showed cost issues
 
 **Principle:** Don't over-engineer upfront. Let real problems guide evolution.
@@ -313,12 +318,14 @@ Advanced scenarios can add these when needed.
 ### Lesson 2: Preserve Philosophy, Evolve Implementation
 
 **What stayed constant:**
+
 - Gradient-guided exploration
 - Modular separation of concerns
 - Bounded sustainability
 - Convergence through stability
 
 **What changed:**
+
 - Number of modules (4 → 7 → 8)
 - Architecture (flat → hierarchical)
 - Specific interfaces
@@ -327,35 +334,161 @@ Advanced scenarios can add these when needed.
 
 ### Lesson 3: Explicit is Better Than Implicit
 
-**v0.1:** Implicit resource limits → **v0.2:** Explicit BudgetTracker  
+**v0.1:** Implicit resource limits → **v0.2:** Explicit BudgetTracker
 **v0.2:** Unclear LLM usage → **v0.3:** Explicit inner/outer loops
 
 **Principle:** Make costs, boundaries, and responsibilities explicit.
 
 ### Lesson 4: Benchmark Early, Iterate Often
 
-**v0.2 limitations** discovered through GitHub search implementation  
+**v0.2 limitations** discovered through GitHub search implementation
 **v0.3 design** validated through comparative benchmarks
 
 **Principle:** Theory guides design, but practice reveals truth.
 
 ---
 
+## v2.1 → v2.2: The Assistive SDK
+
+**Date:** 2026-02
+**Status:** CURRENT
+
+### What Changed
+
+**Architectural shift from framework-first to agent-first:**
+
+1. **New primary API** — `cyberloop(agent, opts)` wraps any agent with control
+2. **Middleware system** — Composable `beforeStep`/`afterStep` hooks replace monolithic Orchestrator wiring
+3. **Agent protocol** — `AgentLike` (opaque) and `SteppableAgent` (step-level) interfaces
+4. **Built-in middleware** — `budgetMiddleware`, `telemetryMiddleware`, `stagnationMiddleware`, `probeMiddleware`, `evaluatorMiddleware`, `policyMiddleware`
+5. **Advanced middleware** — `kinematicsMiddleware` wraps PhysicsEngine + PIDController from v2.1
+6. **Backward compatible** — `Orchestrator` and all v2.1 components preserved
+
+**Architecture evolution:**
+
+```
+v2.1 (Framework-first):
+User Code
+   ↓
+Orchestrator (coordinates everything)
+   ├─ ProbePolicy / KinematicProbePolicy
+   ├─ Planner
+   ├─ Probes, Evaluator, Ladder
+   └─ ControlBudget
+
+v2.2 (Agent-first):
+User Code
+   ↓
+cyberloop(agent, { middleware: [...] })
+   ├─ MiddlewareRunner (beforeStep / afterStep)
+   │    ├─ budgetMiddleware (auto)
+   │    ├─ policyMiddleware (guards + reflexes + base policy)
+   │    ├─ kinematicsMiddleware (EKF/PID)
+   │    └─ telemetryMiddleware
+   └─ SteppableAgent.step() (user-defined)
+```
+
+### Why We Evolved
+
+**Problem 1: High adoption barrier**
+
+```typescript
+// v2.1: User must learn 7+ interfaces to get started
+const orchestrator = new Orchestrator({
+  env, evaluator, ladder, budget, selector, probes,
+  policies: [new KinematicProbePolicy(embedder, engine, pid)],
+})
+// Steep learning curve for simple use cases
+```
+
+**Solution: Progressive disclosure**
+
+```typescript
+// v2.2 Tier 1: Wrap any agent in one line
+const controlled = cyberloop(myAgent, { budget: { maxSteps: 20 } })
+
+// v2.2 Tier 2: Opt into step-level middleware when ready
+const controlled = cyberloop(mySteppableAgent, {
+  middleware: [telemetryMiddleware(logger)],
+})
+```
+
+**Problem 2: Monolithic control wiring**
+
+```typescript
+// v2.1: All control logic hardwired in Orchestrator.run()
+// Adding a new concern (e.g., stagnation detection) requires
+// modifying the Orchestrator or creating a new one
+```
+
+**Solution: Composable middleware**
+
+```typescript
+// v2.2: Each concern is an independent middleware
+const controlled = cyberloop(agent, {
+  middleware: [
+    stagnationMiddleware({ maxStagnantSteps: 5 }),
+    telemetryMiddleware(logger),
+    kinematicsMiddleware({ embedder, goalEmbedding, ... }),
+  ],
+})
+// Add/remove/reorder without touching framework internals
+```
+
+**Problem 3: Policy stack wiring exposed to users**
+
+```typescript
+// v2.1: User manually constructs ChainPolicy
+const chain = new ChainPolicy(basePolicy, [guard1, guard2], [reflex1])
+const action = await chain.decide(state, ladder)
+```
+
+**Solution: policyMiddleware**
+
+```typescript
+// v2.2: Declarative policy configuration
+const { middleware, decideAction } = policyMiddleware({
+  basePolicy, guards: [guard1, guard2], reflexes: [reflex1], ladder,
+})
+// decideAction(state) inside step(), middleware handles lifecycle
+```
+
+### Philosophy Preserved (and Strengthened!)
+
+✅ **Gradient-Guided:** Middleware provides composable gradient sources (probes, evaluators, kinematics)
+✅ **Hierarchical:** Three tiers (opaque → steppable → advanced) mirror inner/outer loop separation
+✅ **Modular:** Middleware is the ultimate modular separation — each concern is a plug-in
+✅ **Bounded:** `budgetMiddleware` auto-registered by default; hard limits always enforced
+✅ **Convergence:** `isDone()` + budget halting provide explicit stopping criteria
+
+### Impact
+
+- **337 tests** across 28 files, all passing
+- **Zero breaking changes** to existing Orchestrator API
+- **Three new standalone examples** demonstrating progressive adoption
+- **Six revised examples** (GitHub + Wikipedia) showing migration path
+
+---
+
 ## Future Evolution (Speculation)
 
-### Potential v0.4 Enhancements
+### Potential v2.3 Enhancements
 
 **Candidates for addition:**
-- **Beam search** - Parallel candidate exploration
-- **Query memoization** - Avoid redundant exploration
-- **Adaptive thresholds** - Learn stability criteria dynamically
+
+- **Beam search middleware** - Parallel candidate exploration
+- **Query memoization middleware** - Avoid redundant exploration
+- **Adaptive threshold middleware** - Learn stability criteria dynamically
 - **Multi-objective evaluation** - Balance multiple goals
+- **Outer loop middleware** - Planner integration via middleware chain
 
 **What will NOT change:**
+
 - The five core pillars (see PHILOSOPHY.md)
 - Hierarchical inner/outer architecture
 - Explicit cost control
 - Modular interfaces
+- Backward compatibility with Orchestrator API
 
 ### Evolution Principles Going Forward
 
@@ -399,12 +532,12 @@ Ask yourself:
 
 ## Conclusion
 
-AICL has evolved from a simple 4-module feedback loop to a sophisticated 8-module hierarchical control system. Through each evolution:
+AICL has evolved from a simple 4-module feedback loop to a sophisticated middleware-based SDK. Through each evolution:
 
-✅ **Core philosophy preserved** - Five pillars remain constant  
-✅ **Practical problems solved** - Each change addressed real limitations  
-✅ **Complexity justified** - Added only when simpler approaches failed  
-✅ **Benchmarks validated** - Theory met practice successfully  
+✅ **Core philosophy preserved** - Five pillars remain constant
+✅ **Practical problems solved** - Each change addressed real limitations
+✅ **Complexity justified** - Added only when simpler approaches failed
+✅ **Benchmarks validated** - Theory met practice successfully
 
 The framework will continue to evolve, but always guided by the timeless principles in PHILOSOPHY.md.
 
@@ -412,7 +545,7 @@ The framework will continue to evolve, but always guided by the timeless princip
 
 ---
 
-**Last Updated:** 2025-10-24  
-**Next Review:** When v0.4 is proposed  
-**Maintained by:** CyberLoop Project  
+**Last Updated:** 2026-02-14
+**Next Review:** When v2.3 is proposed
+**Maintained by:** CyberLoop Project
 **License:** Apache-2.0

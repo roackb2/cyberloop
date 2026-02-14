@@ -1,33 +1,33 @@
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, type vi } from 'vitest'
 
-// Mock the wikipedia telemetry logger before importing
-vi.mock('@/adapters/wikipedia/telemetry', () => ({
-  logger: {
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-    debug: vi.fn(),
-    trace: vi.fn(),
-    fatal: vi.fn(),
-  },
-}))
-
-import type { WikiState } from '@/adapters/wikipedia/types'
 import { LineOfSightReflex } from '@/core/policy/reflexes/line-of-sight'
 
-const createState = (overrides: Partial<WikiState> = {}): WikiState => ({
-  currentTitle: 'Current Page',
-  summary: 'Some summary',
-  url: 'https://en.wikipedia.org/wiki/Current_Page',
+interface TestState {
+  goal: string
+  links: string[]
+}
+
+interface TestAction {
+  type: string
+  title: string
+}
+
+const createState = (overrides: Partial<TestState> = {}): TestState => ({
   goal: 'Target Page',
-  history: [],
-  depth: 0,
   links: [],
   ...overrides,
 })
 
+const createReflex = (logger?: { info: ReturnType<typeof vi.fn> }) =>
+  new LineOfSightReflex<TestState, TestAction>({
+    getLinks: (s) => s.links,
+    getGoal: (s) => s.goal,
+    createAction: (goal) => ({ type: 'NAVIGATE', title: goal }),
+    logger: logger as never,
+  })
+
 describe('LineOfSightReflex', () => {
-  const reflex = new LineOfSightReflex()
+  const reflex = createReflex()
 
   it('has correct name', () => {
     expect(reflex.name).toBe('line-of-sight')
@@ -70,8 +70,8 @@ describe('LineOfSightReflex', () => {
     const state = createState({
       goal: 'Microprocessors',
     })
-    // Force links to undefined to test defensive check
-    ;(state as { links?: string[] }).links = undefined
+      // Force links to undefined to test defensive check
+      ; (state as { links?: string[] }).links = undefined as unknown as string[]
 
     const action = await reflex.check(state)
 

@@ -25,6 +25,7 @@ Output
 ```
 
 **Characteristics:**
+
 - Multiple policies with dynamic routing
 - Failure classification for policy selection
 - Complex termination logic
@@ -98,6 +99,7 @@ Final Output
 ### Preserved Interfaces (For Future Extension)
 
 We keep but don't use:
+
 - `StrategySelector` - For multi-domain agents requiring policy routing
 - `FailureClassifier` - For complex failure modes (distributed systems, bug triage)
 - `TerminationPolicy` - For multi-objective optimization
@@ -137,6 +139,7 @@ Total: ??? (hard to predict)
 #### 3. **Simplicity for Common Cases**
 
 For single-domain tasks (GitHub search, API discovery):
+
 - **No routing overhead** - Direct ProbePolicy execution
 - **No classification overhead** - Direct state examination
 - **Clear decision flow** - Plan → Explore → Evaluate
@@ -144,6 +147,7 @@ For single-domain tasks (GitHub search, API discovery):
 #### 4. **Extensibility for Complex Cases**
 
 For multi-domain tasks (bug localization, distributed system triage):
+
 - **Interfaces preserved** - Can add StrategySelector when needed
 - **Clear extension points** - Add FailureClassifier for complex diagnosis
 - **Documented migration path** - See unused-interfaces.md
@@ -191,6 +195,7 @@ From our GitHub search benchmark:
 ### Current Status (v0.1.0)
 
 **Implemented:**
+
 - ✅ Orchestrator with inner/outer loop separation
 - ✅ ProbePolicy interface with initialize/decide/isStable
 - ✅ Planner interface with plan/evaluate/replan
@@ -199,6 +204,7 @@ From our GitHub search benchmark:
 - ✅ Benchmark comparing to baseline
 
 **Not yet implemented:**
+
 - ⚠️ Beam search (parallel candidates)
 - ⚠️ Query memoization and deduplication
 - ⚠️ Adaptive thresholds (EMA-based)
@@ -214,6 +220,7 @@ Based on feedback from GPT discussion, these optimizations will address the spee
 **Problem:** Sequential exploration is slow (5 API calls)
 
 **Solution:** Parallel candidates with OR merging
+
 ```typescript
 // Instead of:
 t=0: try "node graceful shutdown" → 106 hits
@@ -233,6 +240,7 @@ t=0: try ["node graceful shutdown", "node AND graceful AND shutdown", "graceful 
 **Problem:** Oscillation between same queries (106 → 7 → 106)
 
 **Solution:** Cache and detect duplicates
+
 ```typescript
 // Normalize query
 const key = normalize({ keywords, minStars, language })
@@ -253,6 +261,7 @@ if (seenHashes.has(resultHash)) {
 **Problem:** Hard-coded thresholds (10-30 hits) don't work for all queries
 
 **Solution:** Learn thresholds dynamically
+
 ```typescript
 // Instead of:
 if (hits >= 10 && hits <= 30) return stable
@@ -270,6 +279,7 @@ if (variance < threshold && hits > minAcceptable) return stable
 **Problem:** Inner/outer loops don't coordinate on budget
 
 **Solution:** Link budgets
+
 ```typescript
 // When outer loop budget low:
 if (outerBudget.remaining() < 1.0) {
@@ -289,8 +299,9 @@ if (noImprovementSteps > 5) {
 **Problem:** Only measuring quantity (10 repos vs 3), not quality
 
 **Solution:** Composite score
+
 ```typescript
-score = 
+score =
   0.4 * qualityScore(stars, description) +
   0.3 * freshnessScore(lastUpdate) +
   0.2 * licenseScore(license) +
@@ -302,6 +313,7 @@ score =
 ### Integration with Orchestrator
 
 **Current:** Manual outer loop calls
+
 ```typescript
 const state = await planner.plan(input)
 const result = await orchestrator.exploreInnerLoop(state)
@@ -309,6 +321,7 @@ const output = await planner.evaluate(result.state)
 ```
 
 **Recommended:** Integrated `runAdaptive()`
+
 ```typescript
 const result = await orchestrator.runAdaptive({
   userInput,
@@ -380,7 +393,7 @@ See [docs/use-cases.md](../use-cases.md) for detailed scenarios.
 
 ---
 
-**Decision made by:** Framework authors  
-**Date:** 2025-10-11  
-**Supersedes:** Initial AICL routing-based design  
-**Superseded by:** None (current)
+**Decision made by:** Framework authors
+**Date:** 2025-10-11
+**Supersedes:** Initial AICL routing-based design
+**Superseded by:** None (current; extended by [ADR-0002](0002-assistive-sdk-cyberloop-wrapper.md))

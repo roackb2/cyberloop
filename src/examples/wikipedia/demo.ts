@@ -1,3 +1,9 @@
+/**
+ * LEGACY — This is the original Wikipedia navigation demo with all benchmark modes.
+ * Referenced in the paper; kept for backward compatibility.
+ * See demo-cyberloop.ts for the revised version using cyberloop() (cyberloop mode only).
+ */
+
 import 'dotenv/config'
 
 import { OpenAI } from 'openai';
@@ -106,10 +112,20 @@ async function main() {
   let probePolicy: ProbePolicy<WikiState, WikiAction, number>;
 
   // Reusable components
-  const boredomGuard = new BoredomGuard<WikiState>();
+  const boredomGuard = new BoredomGuard<WikiState>(logger);
   const blacklistGuard = new BlacklistGuard<WikiState>();
-  const reflexLineOfSight = new LineOfSightReflex();
-  const reflexSoftLanding = new SoftLandingReflex(embedder, goalEmbedding);
+  const reflexLineOfSight = new LineOfSightReflex<WikiState, WikiAction>({
+    getLinks: (s) => s.links,
+    getGoal: (s) => s.goal,
+    createAction: (goal) => ({ type: 'NAVIGATE', title: goal }),
+    logger,
+  });
+  const reflexSoftLanding = new SoftLandingReflex<WikiState, WikiAction>({
+    embedder,
+    goalEmbedding,
+    createDoneAction: (reason) => ({ type: 'DONE', result: reason }),
+    logger,
+  });
 
   // Note: We use StochasticHeuristicPolicy as base for some to add entropy,
   // but NaiveGreedyPolicy is strictly deterministic top-1.

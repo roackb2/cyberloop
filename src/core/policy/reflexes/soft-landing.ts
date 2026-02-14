@@ -1,31 +1,39 @@
-import type { WikipediaEmbedder } from '../../../adapters/wikipedia/embedder';
-import { logger } from '../../../adapters/wikipedia/telemetry';
-import type { WikiAction, WikiState } from '../../../adapters/wikipedia/types';
+import type { Logger } from '../../interfaces';
+import type { StateEmbedder } from '../../kinematics/interfaces';
 import { dot, norm } from '../../kinematics/math';
 import type { PolicyReflex } from '../chain';
 
-export class SoftLandingReflex implements PolicyReflex<WikiState, WikiAction> {
+export interface SoftLandingOpts<S, A> {
+  embedder: StateEmbedder<S>;
+  goalEmbedding: number[];
+  /** Create the action to return when semantic match is reached */
+  createDoneAction(reason: string): A;
+  threshold?: number;
+  logger?: Logger;
+}
+
+export class SoftLandingReflex<S, A> implements PolicyReflex<S, A> {
   public name = 'soft-landing';
 
-  constructor(
-    private embedder: WikipediaEmbedder,
-    private goalEmbedding: number[],
-    private threshold = 0.85
-  ) { }
+  private readonly threshold: number;
 
-  async check(state: WikiState): Promise<WikiAction | null> {
+  constructor(private opts: SoftLandingOpts<S, A>) {
+    this.threshold = opts.threshold ?? 0.85;
+  }
+
+  async check(state: S): Promise<A | null> {
     try {
       // Note: This may incur redundant embedding cost if not cached
-      const currentVec = await this.embedder.embed(state);
-      const sim = dot(currentVec, this.goalEmbedding) / (norm(currentVec) * norm(this.goalEmbedding));
+      const currentVec = await this.opts.embedder.embed(state);
+      const sim = dot(currentVec, this.opts.goalEmbedding) / (norm(currentVec) * norm(this.opts.goalEmbedding));
 
       if (sim > this.threshold) {
-        logger.info(`[Reflex] 🛬 Soft Landing triggered! Similarity ${sim.toFixed(4)} > ${this.threshold}`);
-        return { type: 'DONE', result: "Semantic Match Reached" };
+        this.opts.logger?.info(`[Reflex] 🛬 Soft Landing triggered! Similarity ${sim.toFixed(4)} > ${this.threshold}`);
+        return this.opts.createDoneAction("Semantic Match Reached");
       }
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
-      logger.warn(`[Reflex] Soft landing check failed: ${errMsg}`);
+      this.opts.logger?.warn(`[Reflex] Soft landing check failed: ${errMsg}`);
     }
     return null;
   }

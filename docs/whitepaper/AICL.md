@@ -145,6 +145,25 @@ graph LR
 
 ---
 
+## 5.1 Developer API: The Assistive SDK (v2.2)
+
+In v2.2, the reference implementation introduces `cyberloop()` — a lightweight wrapper that applies the control loop principles described above to **any** agent, without requiring users to build inside the Orchestrator.
+
+```typescript
+import { cyberloop } from 'cyberloop'
+import { kinematicsMiddleware } from 'cyberloop/advanced'
+
+const controlled = cyberloop(myAgent, {
+  budget: { maxSteps: 50 },
+  middleware: [kinematicsMiddleware({ embedder, goalEmbedding, ... })],
+})
+const result = await controlled.run('Coffee -> French Revolution')
+```
+
+The Orchestrator remains available for full inner/outer loop control. See [EVOLUTION.md](EVOLUTION.md) for the rationale behind this evolution.
+
+---
+
 ## 6. Vision: From Prompting to Systems Engineering
 
 We believe the era of "Prompt Engineering" is ending. We are entering the era of **Semantic Systems Engineering**.

@@ -26,5 +26,16 @@ A reference glossary for contributors and IDEs implementing or extending the AIC
 | **Stability Window** | Acceptable range for feedback fluctuations considered “stable.” |
 | **Trace** | JSON log recording the full trajectory of a run, including states, feedback, ladder, and costs. |
 | **Reproducibility** | The ability to replay a run deterministically with identical results given the same seed. |
+| **cyberloop()** | The v2.2 SDK entry point. Wraps an `AgentLike` with middleware-based control. |
+| **AgentLike** | Opaque agent interface — any object with a `run(input): Promise<AgentResult>` method. |
+| **SteppableAgent** | Extended agent interface exposing `step()`, `isDone()`, `getInitialState()`, and `toResult()` for per-step middleware. |
+| **Middleware** | A composable unit of logic with optional `beforeStep`, `afterStep`, `setup`, and `teardown` hooks. |
+| **MiddlewareRunner** | Executes a stack of middleware in registration order (beforeStep) and reverse order (afterStep). |
+| **StepContext** | Data passed to middleware before each step: step number, state, prevState, budget snapshot, metadata. |
+| **StepResult** | Data passed to middleware after each step: new state, action, feedback, cost. |
+| **budgetMiddleware** | Built-in middleware that counts steps and halts when `maxSteps` is exceeded. Auto-registered by `cyberloop()`. |
+| **policyMiddleware** | Middleware factory that wraps `ChainPolicy` (guards + reflexes + base policy) and returns a `decideAction()` function. |
+| **kinematicsMiddleware** | Advanced middleware wrapping `PhysicsEngine` + `PIDController` for semantic drift detection (EKF/PID). |
+| **telemetryMiddleware** | Middleware that logs step lifecycle events via a `Logger` instance. |
 
 ---

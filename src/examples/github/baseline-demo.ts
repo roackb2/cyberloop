@@ -1,3 +1,9 @@
+/**
+ * LEGACY — This is the original baseline demo (no control loop).
+ * Referenced in the paper; kept for backward compatibility.
+ * See baseline-demo-cyberloop.ts for the revised version using cyberloop().
+ */
+
 import 'dotenv/config'
 
 import { Agent, run } from '@openai/agents'

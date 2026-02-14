@@ -1,3 +1,19 @@
+/**
+ * @module Orchestrator (Legacy / Full Control)
+ *
+ * Prescriptive inner/outer loop controller. You provide Planner, ProbePolicy,
+ * Environment, Evaluator, Ladder, Budget, and Probes — the Orchestrator
+ * coordinates the full plan → explore → evaluate → replan cycle.
+ *
+ * CyberLoop owns both loops: the outer loop (Planner) decides strategy,
+ * the inner loop (ProbePolicy + Ladder) handles cheap, deterministic exploration.
+ *
+ * For a lighter-weight approach where you keep your existing agent and add
+ * control via composable middleware, see {@link cyberloop} in `./wrapper.ts`.
+ *
+ * @see docs/guide/choosing-your-api.md — When to use Orchestrator vs cyberloop()
+ */
+
 import type { ControlBudget } from './budget/control-budget'
 import type {
   Environment,

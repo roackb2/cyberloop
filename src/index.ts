@@ -8,7 +8,36 @@
  */
 
 // ============================================================================
-// Core Framework
+// Primary API — wrap any agent with `cyberloop(agent, opts)`
+// ============================================================================
+
+export type { AgentLike, AgentResult, StepOutput, SteppableAgent } from './core/agent-protocol'
+export { isSteppable } from './core/agent-protocol'
+export type { CyberLoopOpts } from './core/config'
+export { cyberloop } from './core/wrapper'
+
+// ============================================================================
+// Middleware System
+// ============================================================================
+
+export type { Middleware, StepContext, StepResult } from './core/middleware'
+export type { StagnationOpts } from './core/middleware'
+export { MiddlewareRunner } from './core/middleware'
+
+// ============================================================================
+// Built-in Middleware
+// ============================================================================
+
+export {
+  budgetMiddleware,
+  evaluatorMiddleware,
+  probeMiddleware,
+  stagnationMiddleware,
+  telemetryMiddleware,
+} from './core/middleware'
+
+// ============================================================================
+// Core Framework (Legacy — use cyberloop() for new projects)
 // ============================================================================
 
 /** Main orchestrator for hierarchical control loops */
