@@ -222,4 +222,118 @@ describe('kinematicsMiddleware', () => {
       expect(ctx.metadata['kinematics']).toBeDefined()
     })
   })
+
+  describe('manifold-aware mode (v_normal as PID error)', () => {
+    // Neighbors forming a clear xy-plane
+    const xyPlaneNeighbors = [
+      [1, 0, 0],
+      [0, 1, 0],
+      [-1, 0, 0],
+      [0, -1, 0],
+      [0.5, 0.5, 0],
+      [-0.5, -0.5, 0],
+    ]
+
+    const createMockManifold = (neighbors: number[][]) => ({
+      provider: {
+        knn: vi.fn(() => Promise.resolve(neighbors)),
+      },
+      k: 10,
+      topK: 2,
+    })
+
+    it('uses v_normal as PID error when manifold is provided', async () => {
+      // Movement along z-axis (off the xy-plane manifold)
+      const embedder = createEmbedder([
+        [0, 0, 0],
+        [0, 0, 1],
+        [0, 0, 2],
+      ])
+      const manifold = createMockManifold(xyPlaneNeighbors)
+      const mw = kinematicsMiddleware<TestState>({
+        embedder,
+        goalEmbedding: [0, 0, 0],
+        manifold,
+        pid: { Kp: 1.0, stabilityThreshold: 0.01 },
+      })
+      await mw.setup!({ input: 'test' })
+
+      // Step 0: init
+      await mw.beforeStep!(createCtx({ step: 0 }))
+      // Step 1: establish movement
+      await mw.beforeStep!(createCtx({ step: 1 }))
+      // Step 2: continued off-manifold movement
+      const result = await mw.beforeStep!(createCtx({ step: 2 }))
+
+      const ctx = result as StepContext<TestState>
+      const snapshot = ctx.metadata['kinematics'] as KinematicsSnapshot
+
+      // The manifold provider should have been queried
+      expect(manifold.provider.knn).toHaveBeenCalled()
+
+      // Snapshot should exist with valid data
+      expect(snapshot).toBeDefined()
+      expect(snapshot.error).toBeDefined()
+    })
+
+    it('queries manifold provider with configured k', async () => {
+      const embedder = createEmbedder([
+        [0, 0, 0],
+        [1, 0, 0],
+      ])
+      const manifold = createMockManifold(xyPlaneNeighbors)
+      manifold.k = 25
+      const mw = kinematicsMiddleware<TestState>({
+        embedder,
+        goalEmbedding: [0, 0, 0],
+        manifold,
+      })
+      await mw.setup!({ input: 'test' })
+
+      await mw.beforeStep!(createCtx({ step: 0 }))
+      await mw.beforeStep!(createCtx({ step: 1 }))
+
+      expect(manifold.provider.knn).toHaveBeenCalledWith(expect.any(Array), 25)
+    })
+
+    it('falls back to raw error when manifold returns too few neighbors', async () => {
+      const embedder = createEmbedder([
+        [0, 0, 0],
+        [1, 0, 0],
+      ])
+      // Only 1 neighbor — not enough for PCA
+      const manifold = createMockManifold([[1, 0, 0]])
+      const mw = kinematicsMiddleware<TestState>({
+        embedder,
+        goalEmbedding: [0, 0, 0],
+        manifold,
+      })
+      await mw.setup!({ input: 'test' })
+
+      await mw.beforeStep!(createCtx({ step: 0 }))
+      const result = await mw.beforeStep!(createCtx({ step: 1 }))
+
+      // Should still produce a valid snapshot (using raw error fallback)
+      const ctx = result as StepContext<TestState>
+      const snapshot = ctx.metadata['kinematics'] as KinematicsSnapshot
+      expect(snapshot).toBeDefined()
+      expect(snapshot.error).toBeDefined()
+    })
+
+    it('works without manifold (backward compatible)', async () => {
+      const embedder = createEmbedder([[0, 0, 0], [1, 0, 0]])
+      const mw = kinematicsMiddleware<TestState>({
+        embedder,
+        goalEmbedding,
+        // no manifold
+      })
+      await mw.setup!({ input: 'test' })
+
+      await mw.beforeStep!(createCtx({ step: 0 }))
+      const result = await mw.beforeStep!(createCtx({ step: 1 }))
+
+      const ctx = result as StepContext<TestState>
+      expect(ctx.metadata['kinematics']).toBeDefined()
+    })
+  })
 })

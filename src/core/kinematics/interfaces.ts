@@ -28,8 +28,12 @@ export interface ManifoldSnapshot {
   explainedVariance: number;
   /** Distance from current position to manifold centroid. */
   distanceToCentroid: number;
+  /** Distance from current position to the nearest neighbor. */
+  distanceToNearestNeighbor: number;
   /** Number of neighbors found (sparse = fewer neighbors). */
   neighborCount: number;
+  /** Whether the agent has drifted beyond the configured threshold. */
+  isDrifting: boolean;
 }
 
 // The v2.1 Configuration

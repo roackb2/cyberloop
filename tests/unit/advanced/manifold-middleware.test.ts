@@ -302,6 +302,156 @@ describe('manifoldMiddleware', () => {
       const snapshot = ctx.metadata['manifold'] as ManifoldSnapshot
       expect(snapshot.distanceToCentroid).toBeGreaterThan(10)
     })
+
+    it('reports distance to nearest neighbor', async () => {
+      // Embedding at [1,0,0], neighbors include [1,0,0] → distance = 0
+      const embedder = createEmbedder([[1, 0, 0]])
+      const mw = manifoldMiddleware<TestState>({
+        embedder,
+        manifold: createManifold(xyPlaneNeighbors),
+      })
+      await mw.setup!({ input: 'test' })
+
+      const result = await mw.beforeStep!(createCtx())
+
+      const ctx = result as StepContext<TestState>
+      const snapshot = ctx.metadata['manifold'] as ManifoldSnapshot
+      expect(snapshot.distanceToNearestNeighbor).toBeGreaterThanOrEqual(0)
+      expect(snapshot.distanceToNearestNeighbor).toBeLessThan(1) // [1,0,0] is a neighbor
+    })
+
+    it('reports large nearest neighbor distance when far from corpus', async () => {
+      const embedder = createEmbedder([[100, 100, 100]])
+      const mw = manifoldMiddleware<TestState>({
+        embedder,
+        manifold: createManifold(xyPlaneNeighbors),
+      })
+      await mw.setup!({ input: 'test' })
+
+      const result = await mw.beforeStep!(createCtx())
+
+      const ctx = result as StepContext<TestState>
+      const snapshot = ctx.metadata['manifold'] as ManifoldSnapshot
+      expect(snapshot.distanceToNearestNeighbor).toBeGreaterThan(100)
+    })
+  })
+
+  describe('drift detection', () => {
+    it('isDrifting is false when no driftThreshold configured', async () => {
+      const embedder = createEmbedder([[100, 100, 100]]) // far from neighbors
+      const mw = manifoldMiddleware<TestState>({
+        embedder,
+        manifold: createManifold(xyPlaneNeighbors),
+        // no driftThreshold
+      })
+      await mw.setup!({ input: 'test' })
+
+      const result = await mw.beforeStep!(createCtx())
+
+      const ctx = result as StepContext<TestState>
+      const snapshot = ctx.metadata['manifold'] as ManifoldSnapshot
+      expect(snapshot.isDrifting).toBe(false)
+    })
+
+    it('isDrifting is true when nearest neighbor exceeds threshold', async () => {
+      const embedder = createEmbedder([[100, 100, 100]]) // far from neighbors
+      const mw = manifoldMiddleware<TestState>({
+        embedder,
+        manifold: createManifold(xyPlaneNeighbors),
+        driftThreshold: 5,
+      })
+      await mw.setup!({ input: 'test' })
+
+      const result = await mw.beforeStep!(createCtx())
+
+      const ctx = result as StepContext<TestState>
+      const snapshot = ctx.metadata['manifold'] as ManifoldSnapshot
+      expect(snapshot.isDrifting).toBe(true)
+    })
+
+    it('isDrifting is false when nearest neighbor within threshold', async () => {
+      const embedder = createEmbedder([[1, 0, 0]]) // exactly on a neighbor
+      const mw = manifoldMiddleware<TestState>({
+        embedder,
+        manifold: createManifold(xyPlaneNeighbors),
+        driftThreshold: 5,
+      })
+      await mw.setup!({ input: 'test' })
+
+      const result = await mw.beforeStep!(createCtx())
+
+      const ctx = result as StepContext<TestState>
+      const snapshot = ctx.metadata['manifold'] as ManifoldSnapshot
+      expect(snapshot.isDrifting).toBe(false)
+    })
+
+    it('driftAction warn (default) annotates but does not halt', async () => {
+      const embedder = createEmbedder([[100, 100, 100]])
+      const mw = manifoldMiddleware<TestState>({
+        embedder,
+        manifold: createManifold(xyPlaneNeighbors),
+        driftThreshold: 5,
+        // driftAction defaults to 'warn'
+      })
+      await mw.setup!({ input: 'test' })
+
+      const result = await mw.beforeStep!(createCtx())
+
+      // Should NOT be 'halt'
+      expect(result).not.toBe('halt')
+      const ctx = result as StepContext<TestState>
+      const snapshot = ctx.metadata['manifold'] as ManifoldSnapshot
+      expect(snapshot.isDrifting).toBe(true)
+    })
+
+    it('driftAction halt returns halt when drifting', async () => {
+      const embedder = createEmbedder([[100, 100, 100]])
+      const mw = manifoldMiddleware<TestState>({
+        embedder,
+        manifold: createManifold(xyPlaneNeighbors),
+        driftThreshold: 5,
+        driftAction: 'halt',
+      })
+      await mw.setup!({ input: 'test' })
+
+      const result = await mw.beforeStep!(createCtx())
+
+      expect(result).toBe('halt')
+    })
+
+    it('driftAction halt does not halt when within threshold', async () => {
+      const embedder = createEmbedder([[1, 0, 0]])
+      const mw = manifoldMiddleware<TestState>({
+        embedder,
+        manifold: createManifold(xyPlaneNeighbors),
+        driftThreshold: 5,
+        driftAction: 'halt',
+      })
+      await mw.setup!({ input: 'test' })
+
+      const result = await mw.beforeStep!(createCtx())
+
+      expect(result).not.toBe('halt')
+      const ctx = result as StepContext<TestState>
+      const snapshot = ctx.metadata['manifold'] as ManifoldSnapshot
+      expect(snapshot.isDrifting).toBe(false)
+    })
+
+    it('degenerate case (no neighbors) marks isDrifting true', async () => {
+      const embedder = createEmbedder([[1, 0, 0]])
+      const mw = manifoldMiddleware<TestState>({
+        embedder,
+        manifold: createManifold([]),
+      })
+      await mw.setup!({ input: 'test' })
+
+      const result = await mw.beforeStep!(createCtx())
+
+      const ctx = result as StepContext<TestState>
+      const snapshot = ctx.metadata['manifold'] as ManifoldSnapshot
+      expect(snapshot.isDrifting).toBe(true)
+      expect(snapshot.distanceToNearestNeighbor).toBe(Infinity)
+    })
   })
 
   describe('afterStep', () => {

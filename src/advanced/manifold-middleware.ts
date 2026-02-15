@@ -18,6 +18,20 @@ export interface ManifoldMiddlewareOpts<S> {
    * If omitted, auto-selects to explain 80% of variance.
    */
   topK?: number;
+  /**
+   * Distance threshold for drift detection. When the nearest neighbor
+   * distance exceeds this value, the agent is considered to be drifting
+   * off the manifold (in a "data desert").
+   *
+   * If omitted, drift detection is disabled (isDrifting always false).
+   */
+  driftThreshold?: number;
+  /**
+   * Action to take when drift is detected.
+   * - `'warn'` — annotate `isDrifting: true` in metadata, do not halt (default)
+   * - `'halt'` — return `'halt'` to stop the control loop
+   */
+  driftAction?: 'warn' | 'halt';
   /** Optional logger for manifold telemetry. */
   logger?: Logger;
 }
@@ -33,15 +47,17 @@ export interface ManifoldMiddlewareOpts<S> {
  * middleware, the EKF-filtered velocity from `metadata['kinematics']` is
  * used. Otherwise, raw velocity is computed as (current - previous embedding).
  *
- * The middleware **observes and annotates** — it does not halt or override.
- * Downstream middleware or the agent reads `metadata['manifold']` to decide
- * how to react.
+ * The middleware **observes and annotates** by default. When `driftThreshold`
+ * is set, it can also detect when the agent enters a "data desert" (no nearby
+ * corpus data). The `driftAction` option controls whether this triggers a
+ * halt or just a warning annotation in metadata.
  *
  * **Ordering:** Stack this middleware AFTER `kinematicsMiddleware` so that
  * the filtered velocity is available.
  */
 export function manifoldMiddleware<S>(opts: ManifoldMiddlewareOpts<S>): Middleware<S> {
   const k = opts.k ?? 50;
+  const driftAction = opts.driftAction ?? 'warn';
 
   let previousEmbedding: VectorN | null = null;
 
@@ -84,6 +100,12 @@ export function manifoldMiddleware<S>(opts: ManifoldMiddlewareOpts<S>): Middlewa
         ? decompose(velocity, geometry.tangentBasis)
         : { tangent: velocity.map(() => 0), normal: velocity };
 
+      // Compute distance to nearest neighbor
+      const nearestDist = nearestNeighborDistance(observation, neighbors);
+
+      // Determine if agent is drifting off manifold
+      const isDrifting = opts.driftThreshold != null && nearestDist > opts.driftThreshold;
+
       const snapshot: ManifoldSnapshot = {
         velocityTangent: tangent,
         velocityNormal: normal,
@@ -91,7 +113,9 @@ export function manifoldMiddleware<S>(opts: ManifoldMiddlewareOpts<S>): Middlewa
         curvature: geometry.curvature,
         explainedVariance: geometry.explainedVariance,
         distanceToCentroid: distanceToCentroid(observation, geometry.centroid),
+        distanceToNearestNeighbor: nearestDist,
         neighborCount: neighbors.length,
+        isDrifting,
       };
 
       previousEmbedding = observation;
@@ -104,11 +128,18 @@ export function manifoldMiddleware<S>(opts: ManifoldMiddlewareOpts<S>): Middlewa
               curvature: parseFloat(geometry.curvature.toFixed(4)),
               explainedVariance: parseFloat(geometry.explainedVariance.toFixed(4)),
               normalDrift: parseFloat(snapshot.normalDriftMagnitude.toFixed(4)),
+              nearestNeighbor: parseFloat(nearestDist.toFixed(4)),
               neighbors: neighbors.length,
+              isDrifting,
             },
           },
-          `[Manifold] Step ${ctx.step}: κ=${geometry.curvature.toFixed(4)}, Drift=${snapshot.normalDriftMagnitude.toFixed(4)}, Neighbors=${neighbors.length}`,
+          `[Manifold] Step ${ctx.step}: κ=${geometry.curvature.toFixed(4)}, Drift=${snapshot.normalDriftMagnitude.toFixed(4)}, NearestNeighbor=${nearestDist.toFixed(4)}, Drifting=${isDrifting}`,
         );
+      }
+
+      // Halt if drift detected and action is 'halt'
+      if (isDrifting && driftAction === 'halt') {
+        return 'halt' as unknown as StepContext<S>;
       }
 
       return {
@@ -162,6 +193,20 @@ function buildDegenerateSnapshot(observation: VectorN, neighborCount: number): M
     curvature: 1, // maximally uncertain
     explainedVariance: 0,
     distanceToCentroid: 0,
+    distanceToNearestNeighbor: Infinity,
     neighborCount,
+    isDrifting: true, // no neighbors = definitely drifting
   };
+}
+
+/**
+ * Compute the Euclidean distance from a point to its nearest neighbor.
+ */
+function nearestNeighborDistance(point: VectorN, neighbors: VectorN[]): number {
+  let minDist = Infinity;
+  for (const neighbor of neighbors) {
+    const d = norm(subtract(point, neighbor));
+    if (d < minDist) minDist = d;
+  }
+  return minDist;
 }

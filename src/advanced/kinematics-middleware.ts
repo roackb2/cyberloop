@@ -1,6 +1,7 @@
+import { decompose, localPCA } from '../core/geometry/manifold';
 import type { Logger } from '../core/interfaces';
 import { PhysicsEngine } from '../core/kinematics/engine';
-import type { StateEmbedder } from '../core/kinematics/interfaces';
+import type { ManifoldProvider, StateEmbedder } from '../core/kinematics/interfaces';
 import { norm } from '../core/kinematics/math';
 import { PIDController } from '../core/kinematics/pid';
 import type { KinematicState, VectorN } from '../core/kinematics/types';
@@ -45,6 +46,23 @@ export interface KinematicsMiddlewareOpts<S> {
   physics?: {
     processNoise?: number;
     measureNoise?: number;
+  };
+  /**
+   * v3.0: Optional corpus geometry provider for manifold-aware control.
+   *
+   * When provided, the PID controller uses the **normal component** of the
+   * EKF velocity (v_normal — off-manifold drift) as its error signal instead
+   * of the raw physics error. This means the controller only corrects for
+   * drift off the data manifold, not for valid on-manifold exploration.
+   *
+   * Requires the same `ManifoldProvider` used by `manifoldMiddleware`.
+   */
+  manifold?: {
+    provider: ManifoldProvider;
+    /** Number of neighbors for local PCA. Default: 50. */
+    k?: number;
+    /** Number of principal components for tangent space. Default: auto (80% variance). */
+    topK?: number;
   };
   /** Optional logger for kinematics telemetry. */
   logger?: Logger;
@@ -120,18 +138,37 @@ export function kinematicsMiddleware<S>(opts: KinematicsMiddlewareOpts<S>): Midd
       }
 
       // Update physics
-      const { next, error, coherence } = engine.update(lastPhysicsState, observation, origin!);
+      const { next, error: rawError, coherence } = engine.update(lastPhysicsState, observation, origin!);
+
+      // v3.0: If manifold provider is configured, use v_normal as PID error
+      // instead of raw physics error. This makes the controller correct only
+      // for off-manifold drift, not valid on-manifold exploration.
+      let pidError = rawError;
+      if (opts.manifold) {
+        // PERF: k-NN query is the bottleneck here, same as in manifoldMiddleware.
+        // If both middlewares are stacked, this is a redundant query.
+        // Future optimization: share geometry via metadata.
+        const manifoldK = opts.manifold.k ?? 50;
+        const neighbors = await opts.manifold.provider.knn(observation, manifoldK);
+        if (neighbors.length >= 2) {
+          const geometry = localPCA(neighbors, opts.manifold.topK);
+          if (geometry.tangentBasis.length > 0) {
+            const { normal } = decompose(next.velocity, geometry.tangentBasis);
+            pidError = normal;
+          }
+        }
+      }
 
       // Compute PID correction
-      const correction = pid.compute(error);
+      const correction = pid.compute(pidError);
 
       const angleDeg = coherence * 180 / Math.PI;
 
       const snapshot: KinematicsSnapshot = {
         position: next.position,
         velocity: next.velocity,
-        error,
-        errorMagnitude: norm(error),
+        error: pidError,
+        errorMagnitude: norm(pidError),
         correctionMagnitude: correction.magnitude,
         coherenceAngleDeg: angleDeg,
         isStable: correction.isStable,
