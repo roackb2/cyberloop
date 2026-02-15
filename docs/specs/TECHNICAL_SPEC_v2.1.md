@@ -74,26 +74,26 @@ $$
 
 ## 3. Implementation Interfaces (The Bridge)
 
-We need to bridge the generic `State` from v1.0 with the rigorous `Vector3D` of v2.1.
+We need to bridge the generic `State` from v1.0 with the rigorous `VectorN` of v2.1.
 
 ### 3.1 The Kinematics Type Definition
 
 Create these in `src/core/kinematics/types.ts`.
 
 ```typescript
-export type Vector3D = number[]; // Embedding vector
+export type VectorN = number[]; // N-dimensional embedding vector
 
 // The Physics State (Hidden from the generic Orchestrator)
 export interface KinematicState {
-  position: Vector3D;      // S_i (Filtered)
-  velocity: Vector3D;      // v_i
-  heading: Vector3D;       // D_i
+  position: VectorN;      // S_i (Filtered)
+  velocity: VectorN;      // v_i
+  heading: VectorN;       // D_i
   stepIndex: number;
 }
 
 // The Control Signal returned by the PID controller
 export interface ControlSignal {
-  correctionVector: Vector3D; // u(i)
+  correctionVector: VectorN; // u(i)
   magnitude: number;          // How strong the correction is (0-1)
   isStable: boolean;          // Should we stop?
   log: string;               // Explanation for debug traces
@@ -113,7 +113,7 @@ import { State } from '../types';
 
 // Adapters must implement this to translate their Domain State (JSON) into Physics State (Vector)
 export interface StateEmbedder<S extends State> {
-  embed(state: S): Promise<Vector3D>;
+  embed(state: S): Promise<VectorN>;
 }
 
 // The v2.1 Configuration
@@ -138,8 +138,8 @@ A pure, deterministic class that holds the math. It does not know about LLMs or 
 class PhysicsEngine {
   update(
     prev: KinematicState,
-    observation: Vector3D
-  ): { next: KinematicState; error: Vector3D } {
+    observation: VectorN
+  ): { next: KinematicState; error: VectorN } {
     // 1. EKF Predict & Update
     // 2. Calculate Heading D_i
     // 3. Calculate Cross-track Error e_i (Vector Rejection)
@@ -163,7 +163,7 @@ class KinematicProbePolicy<S> implements ProbePolicy<S, Action, Feedback> {
   ) {}
 
   async decide(state: S, ladder: Ladder): Promise<Action> {
-    // 1. Convert generic State -> Vector3D (using Embedder)
+    // 1. Convert generic State -> VectorN (using Embedder)
     const observation = await this.embedder.embed(state);
 
     // 2. Update Physics Engine
@@ -194,7 +194,7 @@ class KinematicProbePolicy<S> implements ProbePolicy<S, Action, Feedback> {
 When implementing v2.1, follow this sequence to avoid breaking existing code:
 
 1. **Scaffold**: Create `src/core/kinematics/` folder.
-2. **Math First**: Implement `Vector3D` operations (dot product, norm, projection, rejection) in `src/core/kinematics/math.ts`. **Do not use external heavy math libs**, keep it lightweight.
+2. **Math First**: Implement `VectorN` operations (dot product, norm, projection, rejection) in `src/core/geometry/vector.ts` (previously `src/core/kinematics/math.ts`). **Do not use external heavy math libs**, keep it lightweight.
 3. **Engine**: Implement `PhysicsEngine` with EKF and Heading logic.
 4. **Controller**: Implement `PIDController`.
 5. **Integration**: Create `KinematicProbePolicy`.
@@ -219,7 +219,7 @@ const controlled = cyberloop(agent, {
   middleware: [
     kinematicsMiddleware({
       embedder,          // StateEmbedder<S> — same as Section 3.2
-      goalEmbedding,     // Vector3D — task origin τ
+      goalEmbedding,     // VectorN — task origin τ
       pid: { Kp: 0.5, Ki: 0.0, Kd: 0.1, stabilityThreshold: 0.6 },
       physics: { processNoise: 0.1, measureNoise: 0.5 },
     }),

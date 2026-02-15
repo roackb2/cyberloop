@@ -3,16 +3,16 @@ import { PhysicsEngine } from '../core/kinematics/engine';
 import type { StateEmbedder } from '../core/kinematics/interfaces';
 import { norm } from '../core/kinematics/math';
 import { PIDController } from '../core/kinematics/pid';
-import type { KinematicState, Vector3D } from '../core/kinematics/types';
+import type { KinematicState, VectorN } from '../core/kinematics/types';
 import type { Middleware, StepContext, StepResult } from '../core/middleware/types';
 
 /**
  * Kinematics data attached to `ctx.metadata['kinematics']` each step.
  */
 export interface KinematicsSnapshot {
-  position: Vector3D;
-  velocity: Vector3D;
-  error: Vector3D;
+  position: VectorN;
+  velocity: VectorN;
+  error: VectorN;
   errorMagnitude: number;
   correctionMagnitude: number;
   coherenceAngleDeg: number;
@@ -24,7 +24,7 @@ export interface KinematicsSnapshot {
  * Correction info attached to `ctx.metadata['kinematicsCorrection']` when drift is detected.
  */
 export interface CorrectionInfo {
-  vector: Vector3D;
+  vector: VectorN;
   magnitude: number;
   log: string;
 }
@@ -77,7 +77,7 @@ export function kinematicsMiddleware<S>(opts: KinematicsMiddlewareOpts<S>): Midd
   const engine = new PhysicsEngine({ ProcessNoise: processNoise, MeasureNoise: measureNoise, PID: { Kp, Ki, Kd }, MaxDeviation: stabilityThreshold });
   const pid = new PIDController(Kp, Ki, Kd, stabilityThreshold);
 
-  let origin: Vector3D | null = null;
+  let origin: VectorN | null = null;
   let lastPhysicsState: KinematicState | null = null;
 
   return {

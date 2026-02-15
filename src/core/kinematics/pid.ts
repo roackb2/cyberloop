@@ -1,9 +1,9 @@
 import { add, norm, scale, subtract } from './math';
-import type { ControlSignal, Vector3D } from './types';
+import type { ControlSignal, VectorN } from './types';
 
 export class PIDController {
-  private integral: Vector3D;
-  private lastError: Vector3D | null = null;
+  private integral: VectorN;
+  private lastError: VectorN | null = null;
 
   constructor(
     private Kp: number,
@@ -14,7 +14,7 @@ export class PIDController {
     this.integral = []; // Initialize empty, will adapt to dimension on first call
   }
 
-  compute(error: Vector3D, dt = 1): ControlSignal {
+  compute(error: VectorN, dt = 1): ControlSignal {
     // Initialize integral term if needed
     if (this.integral.length === 0) {
       this.integral = error.map(() => 0);

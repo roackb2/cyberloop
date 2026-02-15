@@ -4,11 +4,11 @@ import type { PhysicsEngine } from './engine';
 import type { StateEmbedder } from './interfaces';
 import { norm } from './math';
 import type { PIDController } from './pid';
-import type { CorrectionAction, KinematicState, Vector3D } from './types';
+import type { CorrectionAction, KinematicState, VectorN } from './types';
 
 export class KinematicProbePolicy<S extends State, A extends Action, F extends Feedback> implements ProbePolicy<S, A, F> {
   public id = 'kinematic-policy';
-  private origin: Vector3D | null = null;
+  private origin: VectorN | null = null;
   private lastPhysicsState: KinematicState | null = null;
 
   constructor(
@@ -35,7 +35,7 @@ export class KinematicProbePolicy<S extends State, A extends Action, F extends F
   }
 
   async decide(state: S, ladder: Ladder<F>): Promise<A> {
-    // 1. Convert generic State -> Vector3D
+    // 1. Convert generic State -> VectorN
     const observation = await this.embedder.embed(state);
 
     // Initialize Origin if this is the first step after initialize()

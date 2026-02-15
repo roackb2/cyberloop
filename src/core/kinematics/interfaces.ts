@@ -1,10 +1,10 @@
 import type { State } from '../types';
-import type { Vector3D } from './types';
+import type { VectorN } from './types';
 
 // Adapters must implement this to translate their Domain State (JSON) into Physics State (Vector)
 // This allows the user to define any embedding strategy (OpenAI, local BERT, random projection, etc.)
 export interface StateEmbedder<S extends State> {
-  embed(state: S): Promise<Vector3D>;
+  embed(state: S): Promise<VectorN>;
 }
 
 // The v2.1 Configuration

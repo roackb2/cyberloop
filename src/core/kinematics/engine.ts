@@ -1,6 +1,6 @@
 import type { KinematicsConfig } from './interfaces';
 import { add, angleBetween, norm, reject, scale, subtract } from './math';
-import type { KinematicState, Vector3D } from './types';
+import type { KinematicState, VectorN } from './types';
 
 export class PhysicsEngine {
   constructor(private config: KinematicsConfig) { }
@@ -11,9 +11,9 @@ export class PhysicsEngine {
    */
   update(
     prev: KinematicState,
-    observation: Vector3D,
-    origin: Vector3D
-  ): { next: KinematicState; error: Vector3D; coherence: number } {
+    observation: VectorN,
+    origin: VectorN
+  ): { next: KinematicState; error: VectorN; coherence: number } {
     // 1. Predict (Simple Motion Model: assume constant velocity)
     const s_pred = add(prev.position, prev.velocity);
 
@@ -54,7 +54,7 @@ export class PhysicsEngine {
     const coherence = hasMomentum ? angleBetween(heading, prevHeading) : 0;
 
     // 5. Calculate Cross-track Error (Vector Rejection)
-    let error: Vector3D;
+    let error: VectorN;
 
     if (!hasMomentum) {
       // No previous track to follow, so error is zero.

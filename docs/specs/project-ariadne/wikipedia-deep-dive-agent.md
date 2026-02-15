@@ -41,7 +41,7 @@ This adapter implements the standard AICL interfaces (`Environment`, `StateEmbed
 2. **Embedder (`WikipediaEmbedder`)**:
     * **Input:** `State.summary` + `State.goal`.
     * **Model:** `text-embedding-3-small` (Fast, cheap, effective).
-    * **Output:** `Vector3D`.
+    * **Output:** `VectorN`.
 
 3. **Policy (`SemanticNavigationPolicy`)**:
     * **Role:** Deterministic Inner Loop.
