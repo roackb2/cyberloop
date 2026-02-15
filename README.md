@@ -4,33 +4,132 @@
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.17835643.svg)](https://doi.org/10.5281/zenodo.17835643)
 [![PR Checks](https://github.com/roackb2/cyberloop/actions/workflows/pr-checks.yml/badge.svg?branch=main)](https://github.com/roackb2/cyberloop/actions/workflows/pr-checks.yml)
 
-<p align="center">
-<img src="./docs/images/concept-graph.png" alt="Thermodynamics of Agent Reasoning" width="800">
-</p>
-
-<p align="center">
-<strong>"Stop building open-loop agents. They drift. They fail. They burn money."</strong>
-
-<em>Figure 1: Conceptual model of stability. Standard agents (Red) accumulate entropy over time.
-
-CyberLoop (Blue) dampens this oscillation through closed-loop feedback.</em>
-</p>
+<h3 align="center">Express.js for your agent steps</h3>
+<p align="center"><em>With built-in geometric control middlewares backed by published research</em></p>
 
 ---
 
-## v2.1: The Rise of Physiological AI
+## What is CyberLoop?
 
-> **"Your agent doesn't need a bigger brain. It needs a better body."**
+**CyberLoop** is a TypeScript middleware framework for AI agents. It wraps any agent
+with a composable middleware stack that can **observe, annotate, and correct** each
+step — without modifying the agent's core logic.
 
-**CyberLoop** is the reference implementation of **AICL (Artificial Intelligence Control Loop)**. It treats Agentic Reasoning not as a prompt engineering problem, but as a **Control Theory** problem.
+```typescript
+import { cyberloop } from 'cyberloop'
 
-In **v2.1**, we introduce **Semantic Kinematics**: giving agents a "vestibular system" (inner ear) to detect drift in vector space without needing to "think" (query an LLM). This allows agents to navigate complex knowledge graphs using **pure mathematics**—making them 100x faster and cheaper than traditional Chain-of-Thought agents.
+const controlled = cyberloop(myAgent, {
+  budget: { maxSteps: 20 },                    // stop runaway agents
+  logger: pino(),                              // structured logging (auto-wired)
+  middleware: [
+    stagnationMiddleware(),                     // halt on feedback stagnation
+    myCustomMiddleware(),                       // your own logic here
+  ],
+})
 
-In **v2.2**, we refactor the developer surface into a lightweight **Assistive SDK**. Instead of building inside the framework (`Orchestrator` + 7 interfaces), you now wrap your existing agent with `cyberloop(agent)` and progressively opt into middleware. The Orchestrator is preserved for backward compatibility.
+const result = await controlled.run('your query')
+```
+
+Think of it like Express.js for agents: Express composes middleware around HTTP
+requests. CyberLoop composes middleware around agent steps. You stack middleware to
+add whatever behavior you need — logging, guardrails, evaluation, drift detection —
+and the framework handles the plumbing.
 
 ---
 
-## ⚡ Quick Start: The SDK (v2.2)
+## Why Middleware for Agents?
+
+Most agent frameworks give you **one way** to control behavior: prompt engineering.
+CyberLoop gives you a **programmable observation layer** between each step:
+
+| What you can do | How |
+| --------------- | --- |
+| **Budget & halt** | Stop after N steps, N tokens, or N dollars |
+| **Log & trace** | Structured telemetry for every step |
+| **Evaluate** | Run a small evaluator LLM after each step |
+| **Detect drift** | Compare embeddings to a goal or reference trajectory |
+| **Enforce policy** | Chain-of-thought guards, reflexes, backtracking |
+| **Anything else** | Write a middleware with `beforeStep` / `afterStep` hooks |
+
+Middleware communicates through **typed metadata channels** — one middleware writes
+observations, another reads them. No coupling, no global state.
+
+---
+
+## Write Your Own Middleware
+
+A middleware is an object with optional lifecycle hooks:
+
+```typescript
+import type { Middleware } from 'cyberloop'
+
+function myEvalMiddleware(): Middleware {
+  return {
+    name: 'eval',
+
+    // Runs before each agent step — inspect or modify context, or return 'halt'
+    async beforeStep(ctx) {
+      console.log(`Step ${ctx.step}: starting`)
+      return ctx
+    },
+
+    // Runs after each agent step — inspect result, annotate metadata
+    async afterStep(ctx, result) {
+      const score = await evaluator.score(result.state)
+      ctx.metadata['eval'] = { score, pass: score > 0.7 }
+    },
+  }
+}
+```
+
+`beforeStep` hooks run in registration order. `afterStep` hooks run in reverse
+(onion model). Return `'halt'` from `beforeStep` to stop the loop.
+
+Stack it with any other middleware:
+
+```typescript
+const controlled = cyberloop(agent, {
+  budget: { maxSteps: 50 },
+  middleware: [
+    myEvalMiddleware(),
+    kinematicsMiddleware({ embedder, goalEmbedding }),  // built-in geometric control
+  ],
+})
+```
+
+---
+
+## Built-in: Geometric Control Middlewares
+
+CyberLoop ships with advanced middlewares grounded in **Control Theory** and
+**Differential Geometry**, developed as part of the
+[AICL research program](https://doi.org/10.5281/zenodo.17835643):
+
+| Middleware | What it does | Geometric lens |
+| ---------- | ------------ | -------------- |
+| `kinematicsMiddleware` | EKF-filtered velocity + PID error relative to a goal embedding | Point in ℝ^d |
+| `manifoldMiddleware` | Local PCA via k-NN, tangent/normal decomposition, curvature | Riemannian manifold |
+| `grassmannianMiddleware` | Subspace tracking over sliding windows, geodesic distance to reference trajectory | Grassmannian Gr(k,d) |
+
+Each writes to its own metadata channel (`kinematics`, `manifold`, `grassmannian`).
+They compose independently and can be stacked.
+
+<p align="center">
+<img src="./docs/images/concept-graph.png" alt="Stability through closed-loop feedback" width="800">
+</p>
+
+<p align="center">
+<em>Standard agents (Red) accumulate entropy over time.
+CyberLoop (Blue) dampens oscillation through closed-loop feedback.</em>
+</p>
+
+> **The framework provides geometry. Your application provides semantics.**
+> CyberLoop tells agents *where they are* relative to where they should be.
+> It does NOT tell agents *what to do* — that's your job.
+
+---
+
+## ⚡ Quick Start
 
 ```typescript
 import { cyberloop } from 'cyberloop'
@@ -42,13 +141,18 @@ const result = await controlled.run('your query')
 // Tier 2: Expose step-level control for middleware
 const controlled = cyberloop(mySteppableAgent, {
   budget: { maxSteps: 50 },
-  middleware: [telemetryMiddleware(logger), stagnationMiddleware()],
+  logger: pino(),
+  middleware: [stagnationMiddleware()],
 })
 
-// Tier 3: Advanced — add kinematics (EKF/PID drift detection)
-import { kinematicsMiddleware } from 'cyberloop/advanced'
+// Tier 3: Advanced — add geometric control
+import { kinematicsMiddleware, manifoldMiddleware, grassmannianMiddleware } from 'cyberloop/advanced'
 const controlled = cyberloop(mySteppableAgent, {
-  middleware: [kinematicsMiddleware({ embedder, goalEmbedding, ... })],
+  middleware: [
+    kinematicsMiddleware({ embedder, goalEmbedding }),
+    manifoldMiddleware({ embedder, manifold: vectorDB }),
+    grassmannianMiddleware({ embedder, windowSize: 10, trajectory: goldenArc }),
+  ],
 })
 ```
 
@@ -60,7 +164,9 @@ See [examples/quickstart.ts](src/examples/quickstart.ts) for a runnable 30-line 
 
 **Can an agent find the link between "Coffee" and the "French Revolution" without an LLM?**
 
-Using CyberLoop v2.1, the agent navigates Wikipedia using only **Embeddings + PID Control**. It "senses" semantic proximity and "reflexively" corrects course when it drifts or gets bored.
+Using CyberLoop's `kinematicsMiddleware`, the agent navigates Wikipedia using only
+**Embeddings + PID Control**. It "senses" semantic proximity and reflexively corrects
+course when it drifts.
 
 ### ⚡️ Run it yourself
 
@@ -86,67 +192,48 @@ yarn examples:wikipedia -- --mode cyberloop --scenario revolution
 | **Cost per Step** | ~$0.01 | **~$0.0001** | **99% Cheaper** |
 | **Behavior** | Stochastic | **Controlled** | Reproducible |
 
-> 🔗 **See full benchmark:** [docs/benchmarks/wikipedia/benchmark-wikipedia-navigation.md](docs/benchmarks/wikipedia/benchmark-wikipedia-navigation.md)
+> 🔗 **See full benchmark:** [docs/benchmarks/wikipedia](docs/benchmarks/wikipedia/heading-comparisons/global-heading/benchmark-wikipedia-navigation.md)
 
 ---
 
-## 🧬 Core Architecture: Mind & Body
+## 🧬 Architecture
 
-CyberLoop separates the "Thinking" (Outer Loop) from the "Moving" (Inner Loop).
+### The Middleware Stack
 
-### 1. Inner Loop (The Body & Cerebellum)
+```text
+Agent step → [budget] → [telemetry] → [kinematics] → [manifold] → [grassmannian] → result
+                ↑                                                          ↓
+                └──────────── ctx.metadata (typed channels) ←──────────────┘
+```
 
-The reflexive system that handles fast, deterministic navigation and exploration. **Zero LLM calls.**
+Each middleware hooks into the step with `beforeStep` / `afterStep`. Metadata flows
+through typed channels so middleware can communicate without coupling.
 
-* **🛡️ Probe (Sensor):**
-Low-cost feasibility checks. It asks simple questions like *"Is the result set empty?"* or *"Did the API return 404?"* to generate immediate feedback signals.
-* **🪜 Ladder (Actuator):**
-Mechanisms to regulate exploration entropy. If a probe fails, the ladder adjusts parameters (e.g., relaxing search filters, expanding candidate pools) to overcome friction.
-* **🧭 Kinematics Engine (v2.1):**
-Uses **EKF/PID controllers** to detect "Semantic Drift". If the agent's path diverges too far from the goal vector, the engine applies a "Correction Force" (Backtracking).
-* **⚡️ Reflexes & Guards:**
-Middleware for state hygiene. Includes **Line-of-Sight** (immediate action) and **Boredom Penalty** (avoiding loops).
+### Developer API: Three Tiers
 
-### 2. Outer Loop (The Brain / Cortex)
+| Tier | API | You Provide | CyberLoop Adds |
+| --- | --- | --- | --- |
+| **1. Opaque** | `cyberloop(agent)` | Any agent with `run()` | Budget, event hooks |
+| **2. Steppable** | `cyberloop(steppableAgent)` | Agent with `step()`, `isDone()` | Per-step middleware |
+| **3. Advanced** | `+ geometric middlewares` | Embedder + reference data | Drift detection, trajectory tracking |
 
-The strategic system that handles planning, replanning, and final evaluation.
+### SDK vs Orchestrator
 
-* **Role:** Semantic planning and high-level judgment.
-* **Mechanism:** LLM (GPT-4o / Claude 3.5).
-* **Trigger:** Only activated when the Inner Loop budget is exhausted or a stable state is found.
-* **Cost:** Expensive, but rarely invoked.
+**SDK (`cyberloop()`)** — You own the outer loop. CyberLoop instruments the inner loop
+with composable middleware. Best for adding control to existing agents.
 
-### 3. Developer API: Three Tiers (v2.2)
+**Orchestrator** — CyberLoop owns the full plan → explore → evaluate → replan cycle.
+Legacy, preserved for research benchmarks.
 
-The SDK exposes the control loop at three levels of granularity:
-
-| Tier | API | You Provide | CyberLoop Adds | Example |
-| --- | --- | --- | --- | --- |
-| **1. Opaque** | `cyberloop(agent)` | Any agent with `run()` | Budget, event hooks | [quickstart.ts](src/examples/quickstart.ts) |
-| **2. Steppable** | `cyberloop(steppableAgent)` | Agent with `step()`, `isDone()` | Per-step middleware (telemetry, stagnation, policy) | [middleware-demo.ts](src/examples/middleware-demo.ts) |
-| **3. Advanced** | `+ kinematicsMiddleware()` | Embedder + goal vector | EKF/PID drift detection | [demo-cyberloop.ts](src/examples/wikipedia/demo-cyberloop.ts) |
-
-The legacy `Orchestrator` API remains available for full inner/outer loop control.
-
-### 📖 Which API Should I Use?
-
-**SDK (`cyberloop()`)** — You own the outer loop. CyberLoop instruments the inner loop with composable middleware (budget, policy, kinematics, telemetry). Best for adding control to existing agents or custom orchestration topologies.
-
-**Orchestrator** — CyberLoop owns the full plan → explore → evaluate → replan cycle. Best for research prototyping and reproducing paper benchmarks.
-
-👉 **[Full comparison and decision guide →](docs/guide/choosing-your-api.md)**
+👉 **[Full comparison →](docs/guide/choosing-your-api.md)**
 
 ---
 
-## 📉 Industrial Validation (Legacy)
-
-Before v2.1, we validated the control loop concepts in industrial settings.
+## 📉 Industrial Validation
 
 ### Root Cause Analysis (RCA) Case Study
 
 *(Internal Benchmark on OpenTelemetry Data)*
-
-We used CyberLoop to analyze distributed tracing data in a production environment.
 
 | Metric | Standard Agent | CyberLoop (AICL) | Impact |
 | --- | --- | --- | --- |
@@ -179,17 +266,17 @@ OPENAI_API_KEY=sk-...
 ### Available Demos
 
 ```bash
-# --- SDK Examples (v2.2) ---
+# --- SDK Examples ---
 yarn examples:quickstart                          # Tier 1: opaque agent
 yarn examples:middleware                           # Tier 2: steppable + custom middleware
 yarn examples:openai-agents                        # OpenAI Agents SDK compatibility
 
-# --- Wikipedia Navigation (v2.1 Semantic Kinematics) ---
+# --- Wikipedia Navigation (Semantic Kinematics) ---
 yarn examples:wikipedia:cyberloop                  # SDK version (cyberloop wrapper)
 yarn examples:wikipedia:cyberloop -- --scenario revolution
 yarn examples:wikipedia                            # Legacy Orchestrator (all modes)
 
-# --- GitHub Search (v1.0 Deterministic State Machine) ---
+# --- GitHub Search (Deterministic State Machine) ---
 yarn examples:github:cyberloop                     # SDK version (steppable agent)
 yarn examples:github:baseline:cyberloop            # SDK version (OpenAI Agent)
 yarn examples:github                               # Legacy Orchestrator
@@ -202,19 +289,19 @@ yarn examples:github:baseline                      # Legacy baseline
 ## 📂 Documentation
 
 * **Guide:** [Choosing Your API — SDK vs Orchestrator](docs/guide/choosing-your-api.md)
-* **Benchmarks:** [Wikipedia Navigation Results](docs/benchmarks/wikipedia/benchmark-wikipedia-navigation.md)
+* **Benchmarks:** [Wikipedia Navigation Results](docs/benchmarks/wikipedia/heading-comparisons/global-heading/benchmark-wikipedia-navigation.md)
 * **Theory:** [AICL Whitepaper](docs/whitepaper/AICL.md)
 * **Philosophy:** [Immutable Principles](docs/whitepaper/PHILOSOPHY.md)
 * **Evolution:** [Why the architecture changed](docs/whitepaper/EVOLUTION.md)
 * **Architecture:** [Inner/Outer Loop Spec](docs/architecture/inner-outer-loop.md)
-* **Academic (v2.1):** Zenodo Record - [The Brain Needs a Body (Liang, 2026)](https://zenodo.org/records/18138161)
-* **Academic (v1.0):** Zenodo Record - [AICL Whitepaper (Liang, 2025)](https://zenodo.org/records/17835680)
+* **Academic (v2.1):** Zenodo — [The Brain Needs a Body (Liang, 2026)](https://zenodo.org/records/18138161)
+* **Academic (v1.0):** Zenodo — [AICL Whitepaper (Liang, 2025)](https://zenodo.org/records/17835680)
 
 ---
 
-> **Status:** 🧪 *v2.2 Assistive SDK*
+> **Status:** 🧪 *v4.0 — Middleware framework + geometric control*
 > Uncontrolled intelligence grows powerful but fragile.
 > Controlled intelligence grows stable — and endures.
 
-📜 Licensed under the [Apache 2.0 License](https://www.google.com/search?q=./LICENSE)
+📜 Licensed under the [Apache 2.0 License](./LICENSE)
 © 2025 Jay / Fienna Liang ([roackb2@gmail.com](mailto:roackb2@gmail.com))
