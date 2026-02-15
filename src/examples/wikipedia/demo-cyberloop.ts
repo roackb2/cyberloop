@@ -234,6 +234,11 @@ async function createWikiAgent(
         goalReached,
       }
     },
+
+    // --- Trajectory<S> aliases ---
+    advance(state: WikiState) { return this.step(state) },
+    isTerminal(state: WikiState) { return this.isDone(state) },
+    toOutput(state: WikiState) { return this.toResult(state) },
   }
 
   return { agent, middleware: policyMw, embedder, goalEmbedding }

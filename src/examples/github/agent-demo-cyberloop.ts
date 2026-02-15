@@ -115,6 +115,11 @@ function createGitHubSearchAgent(query: string): SteppableAgent<GhState, string,
         finalHits: state.hits,
       }
     },
+
+    // --- Trajectory<S> aliases ---
+    advance(state: GhState) { return this.step(state) },
+    isTerminal(state: GhState) { return this.isDone(state) },
+    toOutput(state: GhState) { return this.toResult(state) },
   }
 }
 

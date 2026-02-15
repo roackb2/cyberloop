@@ -69,6 +69,11 @@ const guessingAgent: SteppableAgent<GuessState, string, GuessResult> = {
       steps: state.step,
     }
   },
+
+  // --- Trajectory<S> aliases ---
+  advance(state: GuessState) { return this.step(state) },
+  isTerminal(state: GuessState) { return this.isDone(state) },
+  toOutput(state: GuessState) { return this.toResult(state) },
 }
 
 // ---------------------------------------------------------------------------

@@ -21,6 +21,8 @@ export { cyberloop } from './core/wrapper'
 // Middleware System
 // ============================================================================
 
+export type { LocalGeometry } from './core/geometry'
+export type { ManifoldProvider, ManifoldSnapshot } from './core/kinematics/interfaces'
 export type { MetadataChannels, Middleware, StepContext, StepResult } from './core/middleware'
 export type { StagnationOpts } from './core/middleware'
 export { MiddlewareRunner } from './core/middleware'
