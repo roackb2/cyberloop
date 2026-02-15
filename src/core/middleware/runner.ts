@@ -29,7 +29,7 @@ export class MiddlewareRunner<S = unknown> {
   /**
    * Run all `setup` hooks in registration order.
    */
-  async runSetup(ctx: { input: string }): Promise<void> {
+  async runSetup(ctx: { input: unknown }): Promise<void> {
     for (const mw of this.stack) {
       if (mw.setup) {
         await mw.setup(ctx);

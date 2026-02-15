@@ -6,17 +6,23 @@ import { budgetMiddleware } from './middleware/budget';
 import { MiddlewareRunner } from './middleware/runner';
 import { telemetryMiddleware } from './middleware/telemetry';
 import type { Middleware, StepContext, StepResult } from './middleware/types';
+import type { Trajectory } from './trajectory';
+import { isTrajectory } from './trajectory';
 
 /**
- * Wrap any agent with CyberLoop middleware.
+ * Wrap any agent or trajectory with CyberLoop middleware.
  *
- * This is the **Assistive SDK** entry point (v2.2). It instruments the inner
+ * This is the **Assistive SDK** entry point (v2.2+). It instruments the inner
  * loop with composable middleware (budget, policy, kinematics, telemetry)
  * while leaving the outer loop (failure handling, replanning, orchestration
  * topology) entirely in user code.
  *
+ * Accepts three kinds of control subjects:
+ *
  * - **Opaque agents** (`AgentLike`): middleware runs once around the entire `run()` call.
  * - **Steppable agents** (`SteppableAgent`): middleware runs around each `step()` call.
+ * - **Trajectories** (`Trajectory<S>`): middleware runs around each `advance()` call.
+ *   Returns an `AgentLike` whose `run()` drives the trajectory loop.
  *
  * Returns a new `AgentLike` with the same `run()` signature.
  *
@@ -28,22 +34,37 @@ import type { Middleware, StepContext, StepResult } from './middleware/types';
  *
  * @example
  * ```ts
+ * // Agent usage (existing)
  * const wrapped = cyberloop(myAgent, {
  *   budget: { maxSteps: 20 },
  *   middleware: [probeMiddleware(myProbe)],
  *   logger: pino(),
  * });
  * const result = await wrapped.run("find the answer");
+ *
+ * // Trajectory usage (v2.3+)
+ * const controlled = cyberloop(myTrajectory, {
+ *   budget: { maxSteps: 100 },
+ *   middleware: [manifoldMiddleware({ corpus })],
+ * });
+ * const result = await controlled.run(corpusInput);
  * ```
  */
 export function cyberloop<S, I = string, O extends AgentResult = AgentResult>(
-  agent: AgentLike<I, O>,
+  subject: AgentLike<I, O> | Trajectory<S>,
   opts: CyberLoopOpts<S> = {},
 ): AgentLike<I, O> {
   return {
     async run(input: I): Promise<O> {
       const runner = buildRunner<S>(opts);
 
+      // Trajectory path: subject has advance/isTerminal/toOutput but no run()
+      if (isTrajectory<S>(subject) && !('run' in subject)) {
+        return runTrajectory(subject, input, runner, opts);
+      }
+
+      // Agent paths (existing)
+      const agent = subject as AgentLike<I, O>;
       if (isSteppable<S, I, O>(agent)) {
         return runSteppable(agent, input, runner, opts);
       }
@@ -101,8 +122,7 @@ async function runOpaque<S, I, O extends AgentResult>(
   runner: MiddlewareRunner<S>,
   opts: CyberLoopOpts<S>,
 ): Promise<O> {
-  const inputStr = typeof input === 'string' ? input : String(input);
-  await runner.runSetup({ input: inputStr });
+  await runner.runSetup({ input });
 
   const ctx: StepContext<S> = {
     step: 0,
@@ -140,8 +160,7 @@ async function runSteppable<S, I, O extends AgentResult>(
   runner: MiddlewareRunner<S>,
   opts: CyberLoopOpts<S>,
 ): Promise<O> {
-  const inputStr = typeof input === 'string' ? input : String(input);
-  await runner.runSetup({ input: inputStr });
+  await runner.runSetup({ input });
 
   let state: S = await agent.getInitialState(input);
   let step = 0;
@@ -179,4 +198,56 @@ async function runSteppable<S, I, O extends AgentResult>(
 
   await runner.runTeardown({ reason: agent.isDone(state) ? 'completed' : 'halted' });
   return agent.toResult(state);
+}
+
+/**
+ * Trajectory path: middleware wraps each advance() call individually.
+ *
+ * This is the generic control path for any `Trajectory<S>` — documents,
+ * corpora, narratives, or any process modeled as a sequence of states.
+ */
+async function runTrajectory<S, I, O extends AgentResult>(
+  trajectory: Trajectory<S>,
+  input: I,
+  runner: MiddlewareRunner<S>,
+  opts: CyberLoopOpts<S>,
+): Promise<O> {
+  await runner.runSetup({ input });
+
+  let state: S = await trajectory.getInitialState(input);
+  let step = 0;
+  let prevState: S | undefined;
+
+  while (!trajectory.isTerminal(state)) {
+    const ctx: StepContext<S> = {
+      step,
+      state,
+      prevState,
+      budget: { used: step, remaining: 0 },
+      metadata: {},
+    };
+
+    const beforeResult = await runner.runBeforeStep(ctx);
+    if (beforeResult === 'halt') {
+      opts.on?.onHalt?.('budget');
+      break;
+    }
+
+    const currentCtx = beforeResult;
+    const frame = await trajectory.advance(currentCtx.state);
+
+    const stepResult: StepResult<S> = {
+      state: frame.state,
+      action: frame.action,
+      cost: frame.cost,
+    };
+    await runner.runAfterStep(currentCtx, stepResult);
+
+    prevState = currentCtx.state;
+    state = frame.state;
+    step++;
+  }
+
+  await runner.runTeardown({ reason: trajectory.isTerminal(state) ? 'completed' : 'halted' });
+  return trajectory.toOutput(state) as O;
 }

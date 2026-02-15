@@ -1,4 +1,26 @@
 /**
+ * Typed metadata channels shared across middleware within a single step.
+ *
+ * Each control layer writes to its own channel. The index signature
+ * preserves backward compatibility — user middleware can still write
+ * arbitrary keys.
+ */
+export interface MetadataChannels {
+  /** v2.1 Semantic Kinematics snapshot (EKF/PID). */
+  kinematics?: unknown;
+  /** v2.1 Correction info when drift is detected. */
+  kinematicsCorrection?: unknown;
+  /** v3.0 Riemannian manifold snapshot (reserved). */
+  manifold?: unknown;
+  /** v4.0 Grassmannian subspace snapshot (reserved). */
+  grassmannian?: unknown;
+  /** Policy action taken by policyMiddleware. */
+  policyAction?: unknown;
+  /** Extensible — user middleware can write arbitrary keys. */
+  [key: string]: unknown;
+}
+
+/**
  * Context passed to middleware before each agent step.
  */
 export interface StepContext<S = unknown> {
@@ -10,8 +32,8 @@ export interface StepContext<S = unknown> {
   prevState?: S;
   /** Budget snapshot */
   budget: { used: number; remaining: number };
-  /** Arbitrary metadata shared across middleware in a single step */
-  metadata: Record<string, unknown>;
+  /** Typed metadata shared across middleware in a single step */
+  metadata: MetadataChannels;
 }
 
 /**
@@ -58,7 +80,7 @@ export interface Middleware<S = unknown> {
   /**
    * Called once when the loop starts, before the first step.
    */
-  setup?(ctx: { input: string }): Promise<void>;
+  setup?(ctx: { input: unknown }): Promise<void>;
 
   /**
    * Called once when the loop ends (normal completion or halt).

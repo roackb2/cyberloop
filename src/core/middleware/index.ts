@@ -7,4 +7,4 @@ export { MiddlewareRunner } from './runner';
 export type { StagnationOpts } from './stagnation';
 export { stagnationMiddleware } from './stagnation';
 export { telemetryMiddleware } from './telemetry';
-export type { Middleware, StepContext, StepResult } from './types';
+export type { MetadataChannels, Middleware, StepContext, StepResult } from './types';

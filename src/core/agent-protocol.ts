@@ -1,3 +1,7 @@
+import type { Trajectory, TrajectoryFrame } from './trajectory';
+export type { Trajectory, TrajectoryFrame } from './trajectory';
+export { isTrajectory } from './trajectory';
+
 /**
  * Minimal agent interface. Any object with a `run()` method qualifies.
  *
@@ -19,6 +23,17 @@ export interface AgentResult {
 /**
  * An agent that exposes step-level control, enabling per-step middleware.
  *
+ * `SteppableAgent` extends both `AgentLike` (for `run()`) and `Trajectory`
+ * (for frame-by-frame control). The `step`/`isDone`/`toResult` methods are
+ * the agent-specific names; they map to the generic `Trajectory` methods:
+ *
+ * | SteppableAgent | Trajectory   |
+ * |----------------|--------------|
+ * | `step()`       | `advance()`  |
+ * | `isDone()`     | `isTerminal()` |
+ * | `toResult()`   | `toOutput()` |
+ * | `getInitialState()` | `getInitialState()` |
+ *
  * When wrapped with `cyberloop()`, the wrapper drives the step loop:
  * ```
  * state = getInitialState(input)
@@ -32,7 +47,7 @@ export interface AgentResult {
  * ```
  */
 export interface SteppableAgent<S = unknown, I = string, O extends AgentResult = AgentResult>
-  extends AgentLike<I, O> {
+  extends AgentLike<I, O>, Trajectory<S> {
   /** Execute a single step from the current state. */
   step(state: S): Promise<StepOutput<S>>;
   /** Derive the initial state from the input. */
@@ -41,6 +56,15 @@ export interface SteppableAgent<S = unknown, I = string, O extends AgentResult =
   isDone(state: S): boolean;
   /** Convert the final state into an AgentResult. */
   toResult(state: S): O;
+
+  // --- Trajectory<S> implementation (maps to agent methods) ---
+
+  /** Alias for `step()` — advances the trajectory by one frame. */
+  advance(state: S): Promise<TrajectoryFrame<S>>;
+  /** Alias for `isDone()` — checks if the trajectory is terminal. */
+  isTerminal(state: S): boolean;
+  /** Alias for `toResult()` — converts final state to output. */
+  toOutput(state: S): O;
 }
 
 /**

@@ -12,7 +12,8 @@
 // ============================================================================
 
 export type { AgentLike, AgentResult, StepOutput, SteppableAgent } from './core/agent-protocol'
-export { isSteppable } from './core/agent-protocol'
+export type { Trajectory, TrajectoryFrame } from './core/agent-protocol'
+export { isSteppable, isTrajectory } from './core/agent-protocol'
 export type { CyberLoopOpts } from './core/config'
 export { cyberloop } from './core/wrapper'
 
@@ -20,7 +21,7 @@ export { cyberloop } from './core/wrapper'
 // Middleware System
 // ============================================================================
 
-export type { Middleware, StepContext, StepResult } from './core/middleware'
+export type { MetadataChannels, Middleware, StepContext, StepResult } from './core/middleware'
 export type { StagnationOpts } from './core/middleware'
 export { MiddlewareRunner } from './core/middleware'
 
