@@ -1,3 +1,4 @@
+import type { SubspaceBasis } from '../geometry/grassmannian';
 import type { State } from '../types';
 import type { VectorN } from './types';
 
@@ -34,6 +35,41 @@ export interface ManifoldSnapshot {
   neighborCount: number;
   /** Whether the agent has drifted beyond the configured threshold. */
   isDrifting: boolean;
+}
+
+// v4.0: A time-indexed reference trajectory on the Grassmannian.
+// The user provides this — CyberLoop does not construct it.
+// Implementations might wrap a pre-computed array of subspaces from corpus analysis,
+// or perform dynamic time warping internally.
+export interface SubspaceTrajectory {
+  /** Get the reference subspace basis at time t (step index or normalized [0,1]). */
+  referenceAt(t: number): SubspaceBasis;
+  /** Total number of reference points in the trajectory. */
+  length: number;
+}
+
+// v4.0: Grassmannian analysis snapshot written to metadata['grassmannian'] each step.
+export interface GrassmannianSnapshot {
+  /** Current subspace basis (top-k principal directions of the sliding window). */
+  currentBasis: SubspaceBasis;
+  /** Principal angles between current subspace and reference (ascending, radians). */
+  principalAngles: number[];
+  /** Geodesic distance on Gr(k, d) to the reference subspace. */
+  geodesicDistance: number;
+  /** Mean principal angle (average structural alignment). */
+  meanAngle: number;
+  /** Maximum principal angle (worst-case dimensional divergence). */
+  maxAngle: number;
+  /** Explained variance ratio of the current subspace extraction (0–1). */
+  explainedVariance: number;
+  /** Number of vectors currently in the sliding window. */
+  windowSize: number;
+  /** Dimension of the extracted subspace (k). */
+  subspaceDim: number;
+  /** Whether the agent has drifted beyond the configured threshold. */
+  isDrifting: boolean;
+  /** Log map tangent vector (direction to rotate toward reference). Null if no reference. */
+  steeringDirection: VectorN[] | null;
 }
 
 // The v2.1 Configuration
