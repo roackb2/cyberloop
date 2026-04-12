@@ -7,6 +7,7 @@ dist
 # Editor settings
 .vscode
 .cursor
+.claude
 
 # Environment files
 .env

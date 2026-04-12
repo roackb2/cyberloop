@@ -1,13 +1,37 @@
 {
   "name": "cyberloop",
   "version": "1.0.0",
-  "description": "Artificial Intelligence Control Loop",
+  "description": "Middleware framework for agent control loops with semantic drift detection and geometric control",
   "keywords": [
-    "AI",
-    "AICL",
+    "ai-agent",
+    "agent",
+    "agent-framework",
+    "agent-middleware",
+    "agent-runtime",
+    "agent-control",
+    "agent-observability",
+    "semantic-drift",
+    "drift-detection",
+    "geometric-control",
+    "control-theory",
     "cybernetic",
-    "control",
-    "theory"
+    "cybernetics",
+    "aicl",
+    "llm",
+    "llm-agent",
+    "autonomous-agent",
+    "multi-step-agent",
+    "agent-loop",
+    "middleware",
+    "typescript",
+    "openai",
+    "embeddings",
+    "pid",
+    "kalman-filter",
+    "manifold",
+    "grassmannian",
+    "trajectory",
+    "evaluation"
   ],
   "homepage": "https://github.com/roackb2/cyberloop#readme",
   "bugs": {
@@ -24,18 +48,28 @@
   "module": "dist/index.js",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     },
     "./advanced": {
+      "types": "./dist/advanced/index.d.ts",
       "import": "./dist/advanced/index.js",
       "require": "./dist/advanced/index.cjs"
-    }
+    },
+    "./package.json": "./package.json"
   },
   "types": "dist/index.d.ts",
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "LICENSE",
+    "NOTICE"
   ],
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
+  },
   "directories": {
     "doc": "docs"
   },

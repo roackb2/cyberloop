@@ -18,6 +18,7 @@ export default defineConfig([
       "dist/**",
       "node_modules/**",
       "coverage/**",
+      ".claude/**",
       ".tsbuild-ignore/**",
       "eslint.config.*",
       "vitest.config.*",
